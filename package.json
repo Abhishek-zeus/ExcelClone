@@ -1,0 +1,17 @@
+{
+  "name": "excel-grid",
+  "version": "1.0.0",
+  "description": "Canvas-based virtualized Excel-style grid (Phase 0 - Phase 16)",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "npx serve ."
+  },
+  "keywords": ["excel", "canvas", "grid", "typescript"],
+  "author": "Abhishek Revankar",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
