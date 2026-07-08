@@ -1,13 +1,17 @@
 import { CanvasRenderer } from "../renderer/CanvasRenderer.js";
 import { DataModel } from "../data/DataModel.js";
-import { EditorManager } from "../editor/EditorManager.js"; 
+import { EditorManager } from "../editor/EditorManager.js";
 import { Viewport } from "./Viewport.js";
-import { MouseHandler } from "../events/MouseHandler.js";
+import { MouseCell, MouseHandler } from "../events/MouseHandler.js";
 import { SelectionManager } from "../selection/SelectionManager.js";
 import { CELL_HEIGHT, CELL_WIDTH, COLUMN_HEADER_HEIGHT, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT, ROW_HEADER_WIDTH } from "../utils/Constants.js";
 import { ResizeDetector } from "../events/ResizeDetector.js";
 import { RowColumnManager } from "./RowColumnManager.js";
 import { ResizeState } from "../models/ResizeState.js";
+import { CommandInvoker } from "../commands/CommandInvoker.js";
+import { EditCellCommand } from "../commands/EditCellCommand.js";
+import { ResizeColumnCommand } from "../commands/ResizeColumnCommand.js";
+import { ResizeRowCommand } from "../commands/ResizeRowCommand.js";
 
 /**
  * Grid is the "manager"/orchestrator of the whole application.
@@ -27,6 +31,12 @@ export class Grid {
     private renderer: CanvasRenderer;
     private editorManager: EditorManager;
     private rowColumnManager: RowColumnManager;
+    private scrollContainer!: HTMLDivElement;
+    private scrollContent!: HTMLDivElement;
+    private commandInvoker: CommandInvoker;
+    
+    private isSelecting: boolean = false;
+    private selectionStart: MouseCell | null = null
 
     constructor() {
         this.canvas = document.getElementById(
@@ -35,26 +45,40 @@ export class Grid {
 
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-        
+
         this.dataModel = new DataModel();
 
-
-        this.viewport = new Viewport(
-            this.canvas.width,
-            this.canvas.height
-        );
-
-        this.selectionManager = new SelectionManager();
+        this.selectionManager = new SelectionManager(500, 100000);
 
 
         this.rowColumnManager = new RowColumnManager();
 
-        this.resizeDetector = new ResizeDetector(this.viewport,this.rowColumnManager);
+        this.viewport = new Viewport(
+            this.canvas.width,
+            this.canvas.height,
+            this.rowColumnManager
+        );
 
+        this.resizeDetector = new ResizeDetector(this.viewport, this.rowColumnManager);
+        this.commandInvoker = new CommandInvoker();
         this.mouseHandler = new MouseHandler(this.viewport, this.rowColumnManager);
 
         const container = this.canvas.parentElement || document.body;
         this.editorManager = new EditorManager(container);
+
+        this.scrollContainer = document.getElementById("grid-container") as HTMLDivElement;
+        this.scrollContent = document.createElement("div");
+
+        this.scrollContent.style.position = 'absolute';
+        this.scrollContent.style.top = '0';
+        this.scrollContent.style.left = '0';
+        this.scrollContent.style.width = `${500 * CELL_WIDTH}px`;
+        this.scrollContent.style.height = `${100000 * CELL_HEIGHT}px`;
+        this.scrollContent.style.pointerEvents = 'none'; // Passes clicks directly to canvas
+
+        this.scrollContainer.appendChild(this.scrollContent);
+
+       
 
         this.renderer = new CanvasRenderer(
             this.canvas,
@@ -94,12 +118,23 @@ export class Grid {
             this.onMouseUp.bind(this)
         );
 
+        //Scroll Bar
+        this.scrollContainer.addEventListener(
+            "scroll",
+            this.onScroll.bind(this)
+        );
+
+        window.addEventListener(
+            "keydown",
+            this.onKeyDown.bind(this)
+        );
+
     }
 
     private onMouseDown(event: MouseEvent): void {
         const resizeInfo = this.resizeDetector.detectResize(event.offsetX, event.offsetY);
         //if resizeinfo exists then do not select, instead start resizing
-         if (resizeInfo.type === "COLUMN") {
+        if (resizeInfo.type === "COLUMN") {
             this.resizeState = {
                 type: "COLUMN",
                 index: resizeInfo.index,
@@ -108,96 +143,208 @@ export class Grid {
                 originalWidth: this.rowColumnManager.getColumnWidth(resizeInfo.index),
             };
             return; // Stop execution so we don't trigger cell selection
-        } 
-        
+        }
+
         if (resizeInfo.type === "ROW") {
             this.resizeState = {
                 type: "ROW",
                 index: resizeInfo.index,
                 startMouseX: event.offsetX,
                 startMouseY: event.offsetY,
-                originalWidth: this.rowColumnManager.getRowHeight(resizeInfo.index), // Tracks row height
+                originalHeight: this.rowColumnManager.getRowHeight(resizeInfo.index), // Tracks row height
             };
             return; // Stop execution so we don't trigger cell selection
         }
 
+        // If row header is selected
+        if(event.offsetX < ROW_HEADER_WIDTH){
+            const row = this.mouseHandler.getRowFromMouse(event.offsetY);
+            if(row !== -1){
+                this.selectionManager.selectRow(row);
+                this.render();
+            }
+            
+            return;
+        }
+
+        // If column header is selected
+        if(event.offsetY < COLUMN_HEADER_HEIGHT){
+            const column = this.mouseHandler.getColumnFromMouse(event.offsetX);
+            if(column !== -1){
+                this.selectionManager.selectColumn(column);
+                this.render();
+            }
+            return;
+        }
+
+        // Else
         const cell = this.mouseHandler.getCellFromMouse(
             event.offsetX,
             event.offsetY
         );
 
         if (cell) {
+            //Select 1 cell on Mouse Down 
+            this.selectionStart = cell;
+            this.isSelecting = true;
+
             this.selectionManager.selectCell(cell.row, cell.column);
             this.render();
         }
     }
 
-    private onDoubleClick(event: MouseEvent):void{
+    private onDoubleClick(event: MouseEvent): void {
         //Ask mousehandler what cell was clicked
         const cell = this.mouseHandler.getCellFromMouse(
             event.offsetX,
             event.offsetY
         );
 
-        if(!cell) return;
+        if (!cell) return;
 
         // Apply renderer's exact formulas to determine input tracking coordinates of the cell to fit into cell not on mouse's cursor
         const screenX =
             ROW_HEADER_WIDTH +
-            cell.column * CELL_WIDTH -
-            this.viewport.getScrollLeft();
+            this.rowColumnManager.getColumnX(cell.column) ;
 
         const screenY =
             COLUMN_HEADER_HEIGHT +
-            cell.row * CELL_HEIGHT -
-            this.viewport.getScrollTop();
+            this.rowColumnManager.getRowY(cell.row) ;
 
         const value = this.dataModel.getCellValue(cell.row, cell.column);
 
-        this.editorManager.startEditing(cell.row, cell.column, screenX, screenY, CELL_WIDTH, CELL_HEIGHT, value,
-            (newValue : string) => {
-                this.dataModel.setCellValue(cell.row, cell.column, newValue);
+        this.editorManager.startEditing(cell.row, cell.column, screenX, screenY, this.rowColumnManager.getColumnWidth(cell.column), this.rowColumnManager.getRowHeight(cell.row), value,
+            (newValue: string) => {
+                // this.dataModel.setCellValue(cell.row, cell.column, newValue);
+                // this.render();
+
+                const oldValue = this.dataModel.getCellValue(cell.row, cell.column);
+                const command = new EditCellCommand(this.dataModel, cell.row, cell.column, oldValue, newValue);
+
+                this.commandInvoker.executeCommand(command);
                 this.render();
             }
         );
 
     }
 
-    private onMouseMove(event: MouseEvent):void{
+    private onMouseMove(event: MouseEvent): void {
         const resize = this.resizeDetector.detectResize(event.offsetX, event.offsetY);
-        if(resize.type === "ROW"){
+        if (resize.type === "ROW") {
             this.canvas.style.cursor = "row-resize";
-        }else if(resize.type === "COLUMN"){
+        } else if (resize.type === "COLUMN") {
             this.canvas.style.cursor = "col-resize";
-        }else{
+        } else {
             this.canvas.style.cursor = "default";
         }
 
-        if(this.resizeState?.type === "COLUMN"){
+        if (this.resizeState?.type === "COLUMN") {
             const deltaX = event.offsetX - this.resizeState.startMouseX;    //Difference in start and end
-            const newWidth = this.resizeState.originalWidth! + deltaX; 
+            const newWidth = this.resizeState.originalWidth! + deltaX;
 
-            //update rowColumnManager - as per mincolumnwidth
+            //update rowColumnManager - as per mincolumnwidth --Mutates real time dragging
             this.rowColumnManager.setColumnWidth(this.resizeState.index, Math.max(newWidth, MIN_COLUMN_WIDTH));
 
             //Render
             this.render();
         }
-        else if(this.resizeState?.type === "ROW"){
+        else if (this.resizeState?.type === "ROW") {
             const deltaY = event.offsetY - this.resizeState.startMouseY;    //Difference in start and end
-            const newHeight = this.resizeState.originalHeight! + deltaY; 
+            const newHeight = this.resizeState.originalHeight! + deltaY;
 
-            //update rowColumnManager - as per mincolumnwidth
+            //update rowColumnManager - as per mincolumnwidth --Mutates real time dragging
             this.rowColumnManager.setRowHeight(this.resizeState.index, Math.max(newHeight, MIN_ROW_HEIGHT));
 
             //Render
             this.render();
         }
+
+        //MULTIPLE SELECTION LOGIC IF Resize is not Triggered
+        if(this.isSelecting){
+            const cell = this.mouseHandler.getCellFromMouse(event.offsetX, event.offsetY);
+            if(!cell || !this.selectionStart){
+                return;
+            }
+            //Selects a range of cells
+            this.selectionManager.selectRange(this.selectionStart.row, this.selectionStart.column, cell.row, cell.column);
+            this.render();
+        }
     }
 
     //When a user releases his finger
-    private onMouseUp():void{
+    private onMouseUp(): void {
+        
+        if(!this.resizeState) return;
+
+        if(this.resizeState.type === "COLUMN"){
+            const finalWidth = this.rowColumnManager.getColumnWidth(this.resizeState.index);
+            
+            // only push to history if the user actually changed the dimension
+            if(finalWidth != this.resizeState.originalWidth){
+                //Command is created
+                const command = new ResizeColumnCommand(
+                    this.rowColumnManager,
+                    this.resizeState.index,
+                    this.resizeState.originalWidth!,
+                    finalWidth
+                );
+                //And sent
+                this.commandInvoker.executeCommand(command);
+            }
+        }
+        else if(this.resizeState.type === "ROW"){
+            const finalHeight = this.rowColumnManager.getRowHeight(this.resizeState.index);
+            
+            // only push to history if the user actually changed the dimension
+            if(finalHeight != this.resizeState.originalHeight){
+                const command = new ResizeRowCommand(
+                    this.rowColumnManager,
+                    this.resizeState.index,
+                    this.resizeState.originalHeight!,
+                    finalHeight
+                );
+                this.commandInvoker.executeCommand(command);
+            }
+        }
+
+        //clear the active operation token
         this.resizeState = null;
+        this.isSelecting = false;
+
+        this.render();
+    }
+
+    //Scroll bar
+    private onScroll(): void {
+        this.viewport.setScrollTop(this.scrollContainer.scrollTop);
+        this.viewport.setScrollLeft(this.scrollContainer.scrollLeft);
+        this.render();
+    }
+
+    //Keys
+    private onKeyDown(event: KeyboardEvent): void{
+        if(event.ctrlKey && event.key.toLowerCase() === "z"){
+            event.preventDefault(); //stops browsers default action for that key
+            
+            //If text editor is opened, Close it
+            if (this.editorManager && this.editorManager.isEditing === true) {
+                this.editorManager.destroy(); 
+            }
+            
+            this.commandInvoker.undo();
+            this.render();
+        }
+        if(event.ctrlKey && event.key.toLowerCase() === "y"){
+            event.preventDefault();
+
+            //If text editor is opened, Close it
+            if (this.editorManager && this.editorManager.isEditing === true) {
+                this.editorManager.destroy(); 
+            }
+
+            this.commandInvoker.redo();
+            this.render();
+        }
     }
 
     /**

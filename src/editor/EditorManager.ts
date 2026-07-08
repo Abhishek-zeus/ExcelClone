@@ -1,10 +1,11 @@
-export class EditorManager{
+export class EditorManager {
     private input: HTMLInputElement | null = null;
-
+    public isEditing: boolean = false;
+    private onSaveCallBack: ((value: string) => void) | null = null;
     //container is a parent html element
-    constructor(private container: HTMLElement){}
+    constructor(private container: HTMLElement) { }
 
-    private createInput(): HTMLInputElement{
+    private createInput(): HTMLInputElement {
         const input = document.createElement("input");
         input.type = "text";
         input.style.position = "absolute";
@@ -17,16 +18,18 @@ export class EditorManager{
 
     //This method will be called after double click
     public startEditing(
-        row:number, 
-        column:number,
-        x:number, 
-        y:number, 
-        width:number, 
-        height:number, 
-        currentValue:string,
-        onSave:(value:string)=>void //fallback function that tells the editor that once finished call this to save to db
-    ): void{
+        row: number,
+        column: number,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        currentValue: string,
+        onSave: (value: string) => void //fallback function that tells the editor that once finished call this to save to db
+    ): void {
         //position input
+        this.isEditing = true;
+        this.onSaveCallBack = onSave;
         this.input = this.createInput();
         this.input.style.left = `${x}px`;
         this.input.style.top = `${y}px`;
@@ -44,12 +47,16 @@ export class EditorManager{
 
 
         //saving or escape
-        this.input.addEventListener("keydown", (event)=>{
-            if(event.key === "Enter"){
-                onSave(this.input!.value);
-                this.destroy(); 
+        this.input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault(); //prevents browsers default behaviour
+                if (this.input) {
+                    onSave(this.input.value);
+                }
+                this.destroy();
             }
-            if(event.key === "Escape"){
+            if (event.key === "Escape") {
+                event.preventDefault();
                 isCancelled = true;
                 this.destroy();
             }
@@ -58,19 +65,21 @@ export class EditorManager{
 
         //Blur
         this.input.addEventListener("blur", () => {
-            if(!isCancelled && this.input){
-                onSave(this.input!.value);
+            if (!isCancelled && this.input) {
+                onSave(this.input.value);
                 this.destroy();
             }
         }
         );
     }
 
-    private destroy():void{
-        if(!this.input)
+    public destroy(): void {
+        if (!this.input)
             return;
         this.input.remove();
+        this.isEditing = false;
         this.input = null;
+        this.onSaveCallBack = null; // to close the save function in progress and avoid data leaks
     }
 
 }

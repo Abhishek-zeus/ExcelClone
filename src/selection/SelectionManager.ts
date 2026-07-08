@@ -8,6 +8,8 @@ import { CellRange } from "../models/CellRange.js";
  */
 export class SelectionManager {
     private selectedRange: CellRange | null = null;
+    
+    constructor(private totalColumns: number, private totalRows: number){}
 
     /**
      * Selects a single cell. A single cell is just a range whose
@@ -44,5 +46,13 @@ export class SelectionManager {
 
     public getSelection(): CellRange | null {
         return this.selectedRange;
+    }
+
+    public selectRow(row: number): void{
+        this.selectedRange = new CellRange(row, 0, row, this.totalColumns - 1);
+    }
+
+    public selectColumn(column: number): void{
+        this.selectedRange = new CellRange(0, column, this.totalRows - 1, column);
     }
 }

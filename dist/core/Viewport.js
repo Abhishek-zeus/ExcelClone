@@ -1,4 +1,4 @@
-import { CELL_HEIGHT, CELL_WIDTH } from "../utils/Constants.js";
+import { CELL_WIDTH } from "../utils/Constants.js";
 /**
  * Viewport is responsible ONLY for figuring out which rows/columns
  * are currently visible based on the current scroll position.
@@ -13,9 +13,10 @@ import { CELL_HEIGHT, CELL_WIDTH } from "../utils/Constants.js";
  * Everything else can be calculated from those four values.
  */
 export class Viewport {
-    constructor(canvasWidth, canvasHeight) {
+    constructor(canvasWidth, canvasHeight, rowColumnManager) {
         this.canvasWidth = canvasWidth;
         this.canvasHeight = canvasHeight;
+        this.rowColumnManager = rowColumnManager;
         this.scrollTop = 0;
         this.scrollLeft = 0;
     }
@@ -32,11 +33,22 @@ export class Viewport {
         return this.scrollLeft;
     }
     getFirstVisibleRow() {
-        return Math.floor(this.scrollTop / CELL_HEIGHT);
+        let currentY = 0;
+        let row = 0;
+        while (currentY < this.scrollTop) {
+            currentY += this.rowColumnManager.getRowHeight(row);
+            row++;
+        }
+        return Math.max(0, row - 1);
     }
     getLastVisibleRow() {
-        return (this.getFirstVisibleRow() +
-            Math.ceil(this.canvasHeight / CELL_HEIGHT));
+        let currentY = this.rowColumnManager.getRowY(this.getFirstVisibleRow());
+        let row = this.getFirstVisibleRow();
+        while (currentY < this.scrollTop + this.canvasHeight) {
+            currentY += this.rowColumnManager.getRowHeight(row);
+            row++;
+        }
+        return row;
     }
     getFirstVisibleColumn() {
         return Math.floor(this.scrollLeft / CELL_WIDTH);

@@ -53,5 +53,35 @@ export class MouseHandler {
             column
         };
     }
+    getColumnFromMouse(mouseX) {
+        if (mouseX < ROW_HEADER_WIDTH) {
+            return -1;
+        }
+        const actualX = mouseX + this.viewport.getScrollLeft() - ROW_HEADER_WIDTH;
+        let currentX = 0;
+        const totalColumns = 500;
+        for (let col = 0; col < totalColumns; col++) {
+            currentX += this.rowColumnManager.getColumnWidth(col);
+            if (actualX < currentX) {
+                return col;
+            }
+        }
+        return -1;
+    }
+    getRowFromMouse(mouseY) {
+        if (mouseY < COLUMN_HEADER_HEIGHT) {
+            return -1;
+        }
+        const actualY = mouseY + this.viewport.getScrollTop() - COLUMN_HEADER_HEIGHT;
+        let currentY = 0;
+        const totalRows = 100000;
+        for (let row = 0; row < totalRows; row++) {
+            currentY += this.rowColumnManager.getRowHeight(row);
+            if (actualY < currentY) {
+                return row;
+            }
+        }
+        return -1;
+    }
 }
 //# sourceMappingURL=MouseHandler.js.map

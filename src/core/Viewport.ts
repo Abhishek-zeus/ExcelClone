@@ -1,4 +1,5 @@
 import { CELL_HEIGHT, CELL_WIDTH } from "../utils/Constants.js";
+import { RowColumnManager } from "./RowColumnManager.js";
 
 /**
  * Viewport is responsible ONLY for figuring out which rows/columns
@@ -19,7 +20,8 @@ export class Viewport {
 
     constructor(
         private canvasWidth: number,
-        private canvasHeight: number
+        private canvasHeight: number,
+        private rowColumnManager: RowColumnManager
     ) {}
 
     public setScrollTop(scrollTop: number): void {
@@ -39,14 +41,23 @@ export class Viewport {
     }
 
     public getFirstVisibleRow(): number {
-        return Math.floor(this.scrollTop / CELL_HEIGHT);
+        let currentY = 0;
+        let row = 0;
+        while(currentY < this.scrollTop){
+            currentY += this.rowColumnManager.getRowHeight(row);
+            row++;
+        }
+        return Math.max(0, row-1);
     }
 
     public getLastVisibleRow(): number {
-        return (
-            this.getFirstVisibleRow() +
-            Math.ceil(this.canvasHeight / CELL_HEIGHT)
-        );
+        let currentY = this.rowColumnManager.getRowY(this.getFirstVisibleRow());
+        let row = this.getFirstVisibleRow();
+        while(currentY < this.scrollTop + this.canvasHeight){
+            currentY += this.rowColumnManager.getRowHeight(row);
+            row++;
+        }
+        return row;
     }
 
     public getFirstVisibleColumn(): number {

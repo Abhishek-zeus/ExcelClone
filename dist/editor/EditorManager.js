@@ -3,6 +3,8 @@ export class EditorManager {
     constructor(container) {
         this.container = container;
         this.input = null;
+        this.isEditing = false;
+        this.onSaveCallBack = null;
     }
     createInput() {
         const input = document.createElement("input");
@@ -18,6 +20,8 @@ export class EditorManager {
     startEditing(row, column, x, y, width, height, currentValue, onSave //fallback function that tells the editor that once finished call this to save to db
     ) {
         //position input
+        this.isEditing = true;
+        this.onSaveCallBack = onSave;
         this.input = this.createInput();
         this.input.style.left = `${x}px`;
         this.input.style.top = `${y}px`;
@@ -33,10 +37,14 @@ export class EditorManager {
         //saving or escape
         this.input.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
-                onSave(this.input.value);
+                event.preventDefault(); //prevents browsers default behaviour
+                if (this.input) {
+                    onSave(this.input.value);
+                }
                 this.destroy();
             }
             if (event.key === "Escape") {
+                event.preventDefault();
                 isCancelled = true;
                 this.destroy();
             }
@@ -53,7 +61,9 @@ export class EditorManager {
         if (!this.input)
             return;
         this.input.remove();
+        this.isEditing = false;
         this.input = null;
+        this.onSaveCallBack = null; // to close the save function in progress and avoid data leaks
     }
 }
 //# sourceMappingURL=EditorManager.js.map
