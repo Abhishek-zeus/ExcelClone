@@ -6,9 +6,7 @@ import { CellRange } from "../models/CellRange.js";
  * directly (that's the MouseHandler's job).
  */
 export class SelectionManager {
-    constructor(totalColumns, totalRows) {
-        this.totalColumns = totalColumns;
-        this.totalRows = totalRows;
+    constructor() {
         this.selectedRange = null;
     }
     /**
@@ -30,11 +28,11 @@ export class SelectionManager {
     getSelection() {
         return this.selectedRange;
     }
-    selectRow(row) {
-        this.selectedRange = new CellRange(row, 0, row, this.totalColumns - 1);
+    selectRow(row, visibleColumns) {
+        this.selectedRange = new CellRange(row, 0, row, visibleColumns - 1);
     }
-    selectColumn(column) {
-        this.selectedRange = new CellRange(0, column, this.totalRows - 1, column);
+    selectColumn(column, visibleRows) {
+        this.selectedRange = new CellRange(0, column, visibleRows - 1, column);
     }
 }
 //# sourceMappingURL=SelectionManager.js.map

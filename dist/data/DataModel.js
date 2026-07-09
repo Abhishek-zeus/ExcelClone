@@ -10,7 +10,7 @@ export class DataModel {
             "age",
             "salary"
         ];
-        this.generateMockData(50000);
+        this.generateMockData(100000);
         this.generateRemainingColumns(500);
     }
     /**

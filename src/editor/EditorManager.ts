@@ -74,10 +74,13 @@ export class EditorManager {
     }
 
     public destroy(): void {
-        if (!this.input)
+        if (!this.isEditing || !this.input)
             return;
-        this.input.remove();
         this.isEditing = false;
+        // remove only if it is a valid child of a container
+        if(this.input.parentNode === this.container){
+            this.container.removeChild(this.input);
+        }
         this.input = null;
         this.onSaveCallBack = null; // to close the save function in progress and avoid data leaks
     }

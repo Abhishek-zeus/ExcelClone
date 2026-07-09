@@ -45,12 +45,13 @@ export class MouseHandler {
 
         // VARIABLE WIDTH COLUMN LOOKUP LOOP
         let column = -1;
-        let currentX = 0;
-        const totalColumns = 500;
+        let startColumn = this.viewport.getFirstVisibleColumn();
+        let lastColumn = this.viewport.getLastVisibleColumn();
 
-        for (let col = 0; col < totalColumns; col++) {
-            currentX += this.rowColumnManager.getColumnWidth(col);
-            if (actualX < currentX) {
+        for (let col = startColumn; col <= lastColumn; col++) {
+            let currentX = this.rowColumnManager.getColumnX(col);
+            const width = this.rowColumnManager.getColumnWidth(col);
+            if (actualX >= currentX && actualX < currentX + width) {
                 column = col;
                 break; // Found the column index! Exit loop early.
             }
@@ -58,12 +59,13 @@ export class MouseHandler {
 
         // Variable Height row lookup loop
         let row = -1;
-        let currentY = 0;
-        const totalRows = 50000;
-
-        for (let r = 0; r < totalRows; r++) {
-            currentY += this.rowColumnManager.getRowHeight(r);
-            if (actualY < currentY) {
+        let startRow = this.viewport.getFirstVisibleRow();
+        let endRow = this.viewport.getLastVisibleRow();
+        
+        for (let r = startRow; r <= endRow; r++) {
+            let currentY = this.rowColumnManager.getRowY(r);
+            const height = this.rowColumnManager.getRowHeight(r);
+            if (actualY >= currentY && actualY < currentY + height) {
                 row = r;
                 break; // Found the row index! Exit loop early.
             }
@@ -88,11 +90,12 @@ export class MouseHandler {
 
         const actualX = mouseX + this.viewport.getScrollLeft() - ROW_HEADER_WIDTH;
 
-        let currentX = 0;
+        let startColumn = this.viewport.getFirstVisibleColumn();
+        let lastColumn = this.viewport.getLastVisibleColumn();
 
-        const totalColumns = 500;
+        let currentX = this.rowColumnManager.getColumnX(startColumn);
 
-        for(let col = 0; col < totalColumns; col++){
+        for(let col = startColumn; col <= lastColumn; col++){
             currentX += this.rowColumnManager.getColumnWidth(col);
             if(actualX < currentX){
                 return col;
@@ -109,11 +112,11 @@ export class MouseHandler {
 
         const actualY = mouseY + this.viewport.getScrollTop() - COLUMN_HEADER_HEIGHT;
 
-        let currentY = 0;
+        let startRow = this.viewport.getFirstVisibleRow();
+        let endRow = this.viewport.getLastVisibleRow();
+        let currentY = this.rowColumnManager.getRowY(startRow);
 
-        const totalRows = 100000;
-
-        for(let row = 0; row < totalRows; row++){
+        for(let row = startRow; row <= endRow; row++){
             currentY += this.rowColumnManager.getRowHeight(row);
             if(actualY < currentY){
                 return row;

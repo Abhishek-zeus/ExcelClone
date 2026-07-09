@@ -120,10 +120,15 @@ export class CanvasRenderer {
         if (!selection)
             return;
         this.ctx.fillStyle = "rgba(0,120,215,0.25)";
-        for (let row = selection.startRow; row <= selection.endRow; row++) {
+        //To make the selection appear even after scroll
+        const endRow = selection.endRow === Infinity ?
+            this.viewport.getLastVisibleRow() : selection.endRow;
+        const endCol = selection.endColumn === Infinity ?
+            this.viewport.getLastVisibleColumn() : selection.endColumn;
+        for (let row = selection.startRow; row <= endRow; row++) {
             const y = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(row) - this.viewport.getScrollTop();
             const currentHeight = this.rowColumnManager.getRowHeight(row);
-            for (let col = selection.startColumn; col <= selection.endColumn; col++) {
+            for (let col = selection.startColumn; col <= endCol; col++) {
                 const x = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(col) -
                     this.viewport.getScrollLeft();
                 const currentWidth = this.rowColumnManager.getColumnWidth(col);

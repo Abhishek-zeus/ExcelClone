@@ -11,6 +11,8 @@ import { CommandInvoker } from "../commands/CommandInvoker.js";
 import { EditCellCommand } from "../commands/EditCellCommand.js";
 import { ResizeColumnCommand } from "../commands/ResizeColumnCommand.js";
 import { ResizeRowCommand } from "../commands/ResizeRowCommand.js";
+import { StatisticsCalculator } from "../selection/StatisticsCalculator.js";
+import { StatusBar } from "../ui/StatusBar.js";
 /**
  * Grid is the "manager"/orchestrator of the whole application.
  * It creates every other class and wires them together, but it
@@ -20,15 +22,17 @@ import { ResizeRowCommand } from "../commands/ResizeRowCommand.js";
 export class Grid {
     constructor() {
         this.resizeState = null;
+        this.animationFrameId = null;
         this.isSelecting = false;
         this.selectionStart = null;
         this.canvas = document.getElementById("excelCanvas");
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
         this.dataModel = new DataModel();
-        this.selectionManager = new SelectionManager(500, 100000);
+        this.selectionManager = new SelectionManager();
         this.rowColumnManager = new RowColumnManager();
         this.viewport = new Viewport(this.canvas.width, this.canvas.height, this.rowColumnManager);
+        this.statisticsCalculator = new StatisticsCalculator();
         this.resizeDetector = new ResizeDetector(this.viewport, this.rowColumnManager);
         this.commandInvoker = new CommandInvoker();
         this.mouseHandler = new MouseHandler(this.viewport, this.rowColumnManager);
@@ -43,6 +47,7 @@ export class Grid {
         this.scrollContent.style.height = `${100000 * CELL_HEIGHT}px`;
         this.scrollContent.style.pointerEvents = 'none'; // Passes clicks directly to canvas
         this.scrollContainer.appendChild(this.scrollContent);
+        this.statusBar = new StatusBar();
         this.renderer = new CanvasRenderer(this.canvas, this.dataModel, this.selectionManager, this.viewport, this.rowColumnManager);
         this.registerEvents();
         this.render();
@@ -62,6 +67,8 @@ export class Grid {
     }
     onMouseDown(event) {
         const resizeInfo = this.resizeDetector.detectResize(event.offsetX, event.offsetY);
+        //Flag to track if data changed and requires a screen update
+        let needsRender = false;
         //if resizeinfo exists then do not select, instead start resizing
         if (resizeInfo.type === "COLUMN") {
             this.resizeState = {
@@ -87,18 +94,22 @@ export class Grid {
         if (event.offsetX < ROW_HEADER_WIDTH) {
             const row = this.mouseHandler.getRowFromMouse(event.offsetY);
             if (row !== -1) {
-                this.selectionManager.selectRow(row);
-                this.render();
+                this.selectionManager.selectRow(row, Infinity);
+                needsRender = true;
+                this.calculateStats();
             }
+            this.queueRender(needsRender);
             return;
         }
         // If column header is selected
         if (event.offsetY < COLUMN_HEADER_HEIGHT) {
             const column = this.mouseHandler.getColumnFromMouse(event.offsetX);
             if (column !== -1) {
-                this.selectionManager.selectColumn(column);
-                this.render();
+                this.selectionManager.selectColumn(column, Infinity); //passed Infinity for selecting even after scrolling
+                needsRender = true;
+                this.calculateStats();
             }
+            this.queueRender(needsRender);
             return;
         }
         // Else
@@ -108,8 +119,10 @@ export class Grid {
             this.selectionStart = cell;
             this.isSelecting = true;
             this.selectionManager.selectCell(cell.row, cell.column);
-            this.render();
+            this.calculateStats();
+            needsRender = true;
         }
+        this.queueRender(needsRender);
     }
     onDoubleClick(event) {
         //Ask mousehandler what cell was clicked
@@ -142,13 +155,15 @@ export class Grid {
         else {
             this.canvas.style.cursor = "default";
         }
+        //Flag to track if data changed and requires a screen update
+        let needsRender = false;
         if (this.resizeState?.type === "COLUMN") {
             const deltaX = event.offsetX - this.resizeState.startMouseX; //Difference in start and end
             const newWidth = this.resizeState.originalWidth + deltaX;
             //update rowColumnManager - as per mincolumnwidth --Mutates real time dragging
             this.rowColumnManager.setColumnWidth(this.resizeState.index, Math.max(newWidth, MIN_COLUMN_WIDTH));
             //Render
-            this.render();
+            needsRender = true;
         }
         else if (this.resizeState?.type === "ROW") {
             const deltaY = event.offsetY - this.resizeState.startMouseY; //Difference in start and end
@@ -156,45 +171,51 @@ export class Grid {
             //update rowColumnManager - as per mincolumnwidth --Mutates real time dragging
             this.rowColumnManager.setRowHeight(this.resizeState.index, Math.max(newHeight, MIN_ROW_HEIGHT));
             //Render
-            this.render();
+            needsRender = true;
         }
         //MULTIPLE SELECTION LOGIC IF Resize is not Triggered
-        if (this.isSelecting) {
+        if (this.isSelecting && event.buttons === 1) {
             const cell = this.mouseHandler.getCellFromMouse(event.offsetX, event.offsetY);
-            if (!cell || !this.selectionStart) {
-                return;
+            if (cell && this.selectionStart) {
+                this.selectionManager.selectRange(this.selectionStart.row, this.selectionStart.column, cell.row, cell.column);
+                needsRender = true;
+                this.calculateStats();
             }
-            //Selects a range of cells
-            this.selectionManager.selectRange(this.selectionStart.row, this.selectionStart.column, cell.row, cell.column);
-            this.render();
         }
+        else if (this.isSelecting) {
+            //Reset selection state if they click anything else mid-drag
+            this.isSelecting = false;
+        }
+        //Throttled Render Phase, 60 / 120FPS 
+        this.queueRender(needsRender);
     }
     //When a user releases his finger
     onMouseUp() {
-        if (!this.resizeState)
-            return;
-        if (this.resizeState.type === "COLUMN") {
-            const finalWidth = this.rowColumnManager.getColumnWidth(this.resizeState.index);
-            // only push to history if the user actually changed the dimension
-            if (finalWidth != this.resizeState.originalWidth) {
-                //Command is created
-                const command = new ResizeColumnCommand(this.rowColumnManager, this.resizeState.index, this.resizeState.originalWidth, finalWidth);
-                //And sent
-                this.commandInvoker.executeCommand(command);
+        if (this.resizeState) {
+            if (this.resizeState.type === "COLUMN") {
+                const finalWidth = this.rowColumnManager.getColumnWidth(this.resizeState.index);
+                // only push to history if the user actually changed the dimension
+                if (finalWidth != this.resizeState.originalWidth) {
+                    //Command is created
+                    const command = new ResizeColumnCommand(this.rowColumnManager, this.resizeState.index, this.resizeState.originalWidth, finalWidth);
+                    //And sent
+                    this.commandInvoker.executeCommand(command);
+                }
             }
-        }
-        else if (this.resizeState.type === "ROW") {
-            const finalHeight = this.rowColumnManager.getRowHeight(this.resizeState.index);
-            // only push to history if the user actually changed the dimension
-            if (finalHeight != this.resizeState.originalHeight) {
-                const command = new ResizeRowCommand(this.rowColumnManager, this.resizeState.index, this.resizeState.originalHeight, finalHeight);
-                this.commandInvoker.executeCommand(command);
+            else if (this.resizeState.type === "ROW") {
+                const finalHeight = this.rowColumnManager.getRowHeight(this.resizeState.index);
+                // only push to history if the user actually changed the dimension
+                if (finalHeight != this.resizeState.originalHeight) {
+                    const command = new ResizeRowCommand(this.rowColumnManager, this.resizeState.index, this.resizeState.originalHeight, finalHeight);
+                    this.commandInvoker.executeCommand(command);
+                }
             }
         }
         //clear the active operation token
+        this.selectionStart = null;
         this.resizeState = null;
         this.isSelecting = false;
-        this.render();
+        this.queueRender(true);
     }
     //Scroll bar
     onScroll() {
@@ -221,6 +242,27 @@ export class Grid {
             }
             this.commandInvoker.redo();
             this.render();
+        }
+    }
+    // Helper method to keep requestAnimationFrame DRY and centralized
+    queueRender(needsRender) {
+        if (needsRender && !this.animationFrameId) {
+            this.animationFrameId = requestAnimationFrame(() => {
+                this.render();
+                this.animationFrameId = null;
+            });
+        }
+    }
+    // Helper Method for calculating statistics
+    calculateStats() {
+        const selection = this.selectionManager.getSelection();
+        if (selection) {
+            const stats = this.statisticsCalculator.calculate(selection, this.dataModel);
+            // console.log(stats);
+            this.statusBar.show(stats);
+        }
+        else {
+            this.statusBar.clear();
         }
     }
     /**

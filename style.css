@@ -21,3 +21,62 @@ canvas {
     position: relative;
 }
 
+#status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 24px; /* Real Excel uses a compact 24px-26px bar */
+    background: #f3f3f3;
+    border-top: 1px solid #d0d0d0;
+    display: flex;
+    justify-content: flex-end; /* Aligns calculation statistics cleanly to the right */
+    align-items: center;
+    padding: 0 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; /* Clean, professional spreadsheet font */
+    font-size: 11.5px;
+    color: #444444;
+    box-sizing: border-box;
+    user-select: none;
+    z-index: 2000; /* Keeps it locked cleanly above your canvas layer */
+}
+
+/* Base style for the default "Ready" state text */
+.status-ready {
+    width: 100%;
+    text-align: left; /* Keeps "Ready" anchored to the bottom-left just like Excel */
+    color: #555555;
+    padding-left: 4px;
+}
+
+/* Beautiful structural layout for each calculated metric block */
+.status-item {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 12px;
+    position: relative;
+}
+
+/* Draws Excel's subtle vertical gray divider lines between metrics automatically */
+.status-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 5px;
+    bottom: 5px;
+    width: 1px;
+    background-color: #d8d8d8;
+}
+
+/* Sub-text label customization (e.g., "Count:") */
+.status-label {
+    color: #5a5a5a;
+    margin-right: 4px;
+}
+
+/* Numeric results styling customization (e.g., "36") */
+.status-value {
+    font-weight: 600;
+    color: #222222;
+}
