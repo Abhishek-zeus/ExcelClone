@@ -22,53 +22,47 @@ public detectResize(mouseX: number, mouseY: number): ResizeInfo {
     }
 
     const scrollLeft = this.viewPort.getScrollLeft();
+    const firstCol = this.viewPort.getFirstVisibleColumn();
+    const lastCol = this.viewPort.getLastVisibleColumn();
 
-    for (
-        let col = this.viewPort.getFirstVisibleColumn();
-        col <= this.viewPort.getLastVisibleColumn();
-        col++
-    ) {
+    let currentX = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(firstCol);
 
-        const worldRightX =
-            ROW_HEADER_WIDTH +
-            this.rowColumnManager.getColumnX(col) +
-            this.rowColumnManager.getColumnWidth(col);
+    for (let col = firstCol; col <= lastCol; col++) {
+
+        const colWidth =  this.rowColumnManager.getColumnWidth(col);
+        const worldRightX = currentX + colWidth;
 
         const screenRightX = worldRightX - scrollLeft;
 
-        if (
-            Math.abs(mouseX - screenRightX) <= RESIZE_MARGIN
-        ) {
+        if (Math.abs(mouseX - screenRightX) <= RESIZE_MARGIN) {
             return {
                 type: "COLUMN",
                 index: col
             };
         }
+        currentX += colWidth;
     }
 
     const scrollTop = this.viewPort.getScrollTop();
+    const firstRow = this.viewPort.getFirstVisibleRow();
+    const lastRow = this.viewPort.getLastVisibleRow();
 
-    for (
-        let row = this.viewPort.getFirstVisibleRow();
-        row <= this.viewPort.getLastVisibleRow();
-        row++
-    ) {
+    let currentY = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(firstRow);
 
-        const worldBottomY =
-            COLUMN_HEADER_HEIGHT +
-            this.rowColumnManager.getRowY(row) +
-            this.rowColumnManager.getRowHeight(row);
+    for (let row = firstRow; row <= lastRow; row++) {
+        const rowHeight = this.rowColumnManager.getRowHeight(row);
+        const worldBottomY = currentY + rowHeight;
 
         const screenBottomY = worldBottomY - scrollTop;
 
-        if (
-            Math.abs(mouseY - screenBottomY) <= RESIZE_MARGIN
-        ) {
+        if (Math.abs(mouseY - screenBottomY) <= RESIZE_MARGIN) {
             return {
                 type: "ROW",
                 index: row
             };
         }
+
+        currentY += rowHeight;
     }
 
     return {

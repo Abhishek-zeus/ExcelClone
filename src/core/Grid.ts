@@ -4,7 +4,7 @@ import { EditorManager } from "../editor/EditorManager.js";
 import { Viewport } from "./Viewport.js";
 import { MouseCell, MouseHandler } from "../events/MouseHandler.js";
 import { SelectionManager } from "../selection/SelectionManager.js";
-import { CELL_HEIGHT, CELL_WIDTH, COLUMN_HEADER_HEIGHT, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT, ROW_HEADER_WIDTH } from "../utils/Constants.js";
+import { CELL_HEIGHT, CELL_WIDTH, COLUMN_HEADER_HEIGHT, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT, ROW_HEADER_WIDTH, TOTAL_COLUMNS, TOTAL_ROWS } from "../utils/Constants.js";
 import { ResizeDetector } from "../events/ResizeDetector.js";
 import { RowColumnManager } from "./RowColumnManager.js";
 import { ResizeState } from "../models/ResizeState.js";
@@ -79,8 +79,8 @@ export class Grid {
         this.scrollContent.style.position = 'absolute';
         this.scrollContent.style.top = '0';
         this.scrollContent.style.left = '0';
-        this.scrollContent.style.width = `${500 * CELL_WIDTH}px`;
-        this.scrollContent.style.height = `${100000 * CELL_HEIGHT}px`;
+        this.scrollContent.style.width = `${TOTAL_COLUMNS * CELL_WIDTH}px`;
+        this.scrollContent.style.height = `${TOTAL_ROWS * CELL_HEIGHT}px`;
         this.scrollContent.style.pointerEvents = 'none'; // Passes clicks directly to canvas
 
         this.scrollContainer.appendChild(this.scrollContent);
@@ -252,7 +252,7 @@ export class Grid {
         } else if (resize.type === "COLUMN") {
             this.canvas.style.cursor = "col-resize";
         } else {
-            this.canvas.style.cursor = "default";
+            this.canvas.style.cursor = "cell";
         }
 
         //Flag to track if data changed and requires a screen update

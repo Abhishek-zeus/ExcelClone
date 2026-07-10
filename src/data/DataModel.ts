@@ -1,3 +1,5 @@
+import { MIN_SALARY, TOTAL_COLUMNS, TOTAL_ROWS } from "../utils/Constants.js";
+
 export interface RowData {
     id: number;
     firstName: string;
@@ -22,8 +24,8 @@ export class DataModel {
     ];
 
     constructor() {
-        this.generateMockData(100000);
-        this.generateRemainingColumns(500);
+        this.generateMockData(TOTAL_ROWS);
+        this.generateRemainingColumns(TOTAL_COLUMNS);
     }
 
     /**
@@ -57,7 +59,7 @@ export class DataModel {
                 firstName: firstNames[i % firstNames.length],
                 lastName: lastNames[i % lastNames.length],
                 age: 20 + (i % 25),
-                salary: 50000 + (i % 10) * 10000
+                salary: MIN_SALARY + (i % 10) * 10000
             });
         }
     }

@@ -12,6 +12,7 @@ canvas {
     position: sticky;
     top: 0;
     left: 0;
+    cursor: cell;
 }
 
 #grid-container{

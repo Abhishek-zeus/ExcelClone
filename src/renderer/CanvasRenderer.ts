@@ -2,16 +2,16 @@ import { DataModel } from "../data/DataModel.js";
 import { SelectionManager } from "../selection/SelectionManager.js";
 import { Viewport } from "../core/Viewport.js";
 import {
-    CELL_WIDTH,
-    CELL_HEIGHT,
+    HANDLE_SIZE,
     ROW_HEADER_WIDTH,
     COLUMN_HEADER_HEIGHT,
     GRID_LINE_COLOR,
-    HEADER_BACKGROUND,
     FONT,
     TEXT_COLOR
 } from "../utils/Constants.js";
 import { RowColumnManager } from "../core/RowColumnManager.js";
+import { ExcelColumnHelper } from "../utils/ExcelColumnHelper.js";
+import { HeaderRenderer } from "./HeaderRenderer.js";
 
 /**
  * CanvasRenderer is responsible ONLY for drawing.
@@ -29,6 +29,7 @@ export class CanvasRenderer {
     private dataModel: DataModel;
     private selectionManager: SelectionManager;
     private viewport: Viewport;
+    private headerRenderer: HeaderRenderer;
     private rowColumnManager: RowColumnManager;
 
     constructor(
@@ -44,6 +45,7 @@ export class CanvasRenderer {
         this.rowColumnManager = rowColumnManager;
         this.selectionManager = selectionManager;
         this.viewport = viewport;
+        this.headerRenderer = new HeaderRenderer(this.selectionManager,this.ctx,this.canvas, this.rowColumnManager);
     }
 
     public render(
@@ -58,8 +60,8 @@ export class CanvasRenderer {
         this.drawGrid(startRow, endRow, startColumn, endColumn, scrollTop, scrollLeft);
         this.drawCellContents(startRow, endRow, startColumn, endColumn, scrollTop, scrollLeft);
         this.drawSelection();
-        this.drawColumnHeaders(startColumn, endColumn, scrollLeft);
-        this.drawRowHeaders(startRow, endRow, scrollTop);
+        this.headerRenderer.drawColumnHeaders(startColumn, endColumn, scrollLeft);
+        this.headerRenderer.drawRowHeaders(startRow, endRow, scrollTop);
     }
 
     private clearCanvas(): void {
@@ -71,106 +73,7 @@ export class CanvasRenderer {
         );
     }
 
-    private drawColumnHeaders(
-        startColumn: number,
-        endColumn: number,
-        scrollLeft: number
-    ): void {
-        const selection = this.selectionManager.getSelection();
-        this.ctx.fillStyle = HEADER_BACKGROUND;
-        this.ctx.fillRect(
-            0,
-            0,
-            this.canvas.width,
-            COLUMN_HEADER_HEIGHT
-        );
-
-        this.ctx.strokeStyle = GRID_LINE_COLOR;
-        this.ctx.font = FONT;
-        this.ctx.textAlign = "center";
-        this.ctx.textBaseline = "middle";
-
-        for (let col = startColumn; col <= endColumn; col++) {
-            const x = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(col) - scrollLeft;
-            const currentWidth = this.rowColumnManager.getColumnWidth(col);
-            const isSelected = selection && col >= selection.startColumn && col <= selection.endColumn;
-            this.ctx.fillStyle = isSelected? "#D9EAFE" : HEADER_BACKGROUND;
-
-            this.ctx.fillRect(x, 0, currentWidth, COLUMN_HEADER_HEIGHT);
-
-
-            this.ctx.strokeRect(
-                x,
-                0,
-                currentWidth,
-                COLUMN_HEADER_HEIGHT
-            );
-            
-
-            // Only supports single-letter columns (A-Z) for now.
-            // ExcelColumnHelper (AA, AB, ...) will replace this later.
-            const header = String.fromCharCode(65 + (col % 26));
-
-            this.ctx.fillStyle = TEXT_COLOR; //Otherwise the letters become blue too
-
-            this.ctx.fillText(
-                header,
-                x + currentWidth / 2,
-                COLUMN_HEADER_HEIGHT / 2
-            );
-
-            
-        }
-    }
-
-    private drawRowHeaders(
-        startRow: number,
-        endRow: number,
-        scrollTop: number
-    ): void {
-        const selection = this.selectionManager.getSelection();
-        this.ctx.fillStyle = HEADER_BACKGROUND;
-        this.ctx.fillRect(
-            0,
-            0,
-            ROW_HEADER_WIDTH,
-            this.canvas.height
-        );
-
-        this.ctx.strokeStyle = GRID_LINE_COLOR;
-        this.ctx.font = FONT;
-        this.ctx.textAlign = "center";
-        this.ctx.textBaseline = "middle";
-
-        for (let row = startRow; row <= endRow; row++) {
-            const y = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(row) - scrollTop;
-            const currentHeight = this.rowColumnManager.getRowHeight(row);
-
-            if(selection && row >= selection.startRow && row <= selection.endRow){
-                this.ctx.fillStyle = "#D9EAFE"
-            }
-            else{
-                this.ctx.fillStyle = HEADER_BACKGROUND;
-            }
-
-            this.ctx.fillRect(0, y, ROW_HEADER_WIDTH, currentHeight);
-
-            this.ctx.strokeRect(
-                0,
-                y,
-                ROW_HEADER_WIDTH,
-                currentHeight
-            );
-
-            this.ctx.fillStyle = TEXT_COLOR; //Otherwise the letters become blue too
-
-            this.ctx.fillText(
-                String(row + 1),
-                ROW_HEADER_WIDTH / 2,
-                y + currentHeight / 2
-            );
-        }
-    }
+    
 
     private drawGrid(
         startRow: number,
@@ -182,20 +85,25 @@ export class CanvasRenderer {
     ): void {
         this.ctx.strokeStyle = GRID_LINE_COLOR;
 
+        let currentY = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(startRow) - scrollTop;
+    
+
         for (let row = startRow; row <= endRow; row++) {
-            const y = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(row) - scrollTop;
             const currentHeight = this.rowColumnManager.getRowHeight(row);
+            let currentX = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(startColumn) - scrollLeft;
+
             for (let col = startColumn; col <= endColumn; col++) {
-                const x = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(col) - scrollLeft;
                 const currentWidth = this.rowColumnManager.getColumnWidth(col);
 
                 this.ctx.strokeRect(
-                    x,
-                    y,
+                    currentX,
+                    currentY,
                     currentWidth,
                     currentHeight
                 );
+                currentX += currentWidth;
             }
+            currentY += currentHeight;
         }
     }
 
@@ -212,24 +120,28 @@ export class CanvasRenderer {
         this.ctx.textAlign = "left";
         this.ctx.textBaseline = "middle";
 
+        let currentY = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(startRow) - scrollTop;
+
+
         for (let row = startRow; row <= endRow; row++) {
-            const y = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(row) - scrollTop;
             const currentHeight = this.rowColumnManager.getRowHeight(row);
+
+            let currentX = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(startColumn) - scrollLeft;
+
 
             for (let col = startColumn; col <= endColumn; col++) {
                 const value = this.dataModel.getCellValue(row, col);
 
                 if (value === "") continue;
 
-                const x = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(col) - scrollLeft;
                 const currentWidth = this.rowColumnManager.getColumnWidth(col);
 
                 // Clip so long text never spills into neighboring cells.
                 this.ctx.save();
                 this.ctx.beginPath();
                 this.ctx.rect(
-                    x,
-                    y,
+                    currentX,
+                    currentY,
                     currentWidth,
                     currentHeight
                 );
@@ -237,12 +149,15 @@ export class CanvasRenderer {
 
                 this.ctx.fillText(
                     String(value),
-                    x + 5,
-                    y + currentHeight / 2
+                    currentX + 5,
+                    currentY + currentHeight / 2
                 );
 
                 this.ctx.restore();
+
+                currentX += currentWidth;
             }
+            currentY += currentHeight;
         }
     }
 
@@ -264,24 +179,45 @@ export class CanvasRenderer {
             this.viewport.getLastVisibleColumn() : selection.endColumn;
 
 
+        let currentY = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(selection.startRow) - this.viewport.getScrollTop();
+
 
         for (let row = selection.startRow; row <= endRow; row++) {
-            const y = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(row) - this.viewport.getScrollTop();
             const currentHeight = this.rowColumnManager.getRowHeight(row);
 
-            for (let col = selection.startColumn; col <= endCol; col++) {
-                const x =
-                    ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(col) -
+            let currentX =
+                    ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(selection.startColumn) -
                     this.viewport.getScrollLeft();
+            for (let col = selection.startColumn; col <= endCol; col++) {
+                
                 const currentWidth = this.rowColumnManager.getColumnWidth(col);
 
                 this.ctx.fillRect(
-                    x,
-                    y,
+                    currentX,
+                    currentY,
                     currentWidth,
                     currentHeight
                 );
+                currentX += currentWidth;
             }
+            currentY += currentHeight;
         }
+
+        // Borders
+        const left = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(selection.startColumn) - this.viewport.getScrollLeft();
+        const top = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(selection.startRow) - this.viewport.getScrollTop();
+        const right = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(endCol) + this.rowColumnManager.getColumnWidth(selection.endColumn) - this.viewport.getScrollLeft();
+        const bottom = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(endRow) + this.rowColumnManager.getRowHeight(selection.endRow) - this.viewport.getScrollTop();
+    
+        this.ctx.strokeStyle = "#107C41";
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(left, top, right-left, bottom-top);
+
+        // Additional little square for drag-copy (Show not working)
+        const handleX = right - HANDLE_SIZE;
+        const handleY = bottom - HANDLE_SIZE;
+
+        this.ctx.fillStyle = "#107C41";
+        this.ctx.fillRect(handleX, handleY, HANDLE_SIZE, HANDLE_SIZE);
     }
 }

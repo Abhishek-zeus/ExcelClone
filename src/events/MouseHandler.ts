@@ -62,13 +62,16 @@ export class MouseHandler {
         let startRow = this.viewport.getFirstVisibleRow();
         let endRow = this.viewport.getLastVisibleRow();
         
+        let currentY = this.rowColumnManager.getRowY(startRow);
+
+
         for (let r = startRow; r <= endRow; r++) {
-            let currentY = this.rowColumnManager.getRowY(r);
             const height = this.rowColumnManager.getRowHeight(r);
             if (actualY >= currentY && actualY < currentY + height) {
                 row = r;
                 break; // Found the row index! Exit loop early.
             }
+            currentY =+ height;
         }
 
         // Safety fallback: if mouse is clicked beyond computed layout dimensions
