@@ -48,13 +48,15 @@ export class MouseHandler {
         let startColumn = this.viewport.getFirstVisibleColumn();
         let lastColumn = this.viewport.getLastVisibleColumn();
 
+        let currentX = this.rowColumnManager.getColumnX(startColumn);
+
         for (let col = startColumn; col <= lastColumn; col++) {
-            let currentX = this.rowColumnManager.getColumnX(col);
             const width = this.rowColumnManager.getColumnWidth(col);
             if (actualX >= currentX && actualX < currentX + width) {
                 column = col;
                 break; // Found the column index! Exit loop early.
             }
+            currentX += width;
         }
 
         // Variable Height row lookup loop
@@ -64,14 +66,13 @@ export class MouseHandler {
         
         let currentY = this.rowColumnManager.getRowY(startRow);
 
-
         for (let r = startRow; r <= endRow; r++) {
             const height = this.rowColumnManager.getRowHeight(r);
             if (actualY >= currentY && actualY < currentY + height) {
                 row = r;
                 break; // Found the row index! Exit loop early.
             }
-            currentY =+ height;
+            currentY += height;
         }
 
         // Safety fallback: if mouse is clicked beyond computed layout dimensions

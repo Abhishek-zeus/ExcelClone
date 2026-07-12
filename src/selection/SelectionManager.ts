@@ -34,12 +34,21 @@ export class SelectionManager {
         endRow: number,
         endColumn: number
     ): void {
-        this.selectedRange = new CellRange(
+        if(this.selectedRange){
+            this.selectedRange.startRow = Math.min(startRow, endRow);
+            this.selectedRange.startColumn = Math.min(startColumn, endColumn);
+            this.selectedRange.endRow = Math.max(startRow, endRow);
+            this.selectedRange.endColumn = Math.max(startColumn, endColumn);
+        }
+        else {
+            this.selectedRange = new CellRange(
             Math.min(startRow, endRow),
             Math.min(startColumn, endColumn),
             Math.max(startRow, endRow),
             Math.max(startColumn, endColumn)
         );
+        }
+
     }
 
     public getSelection(): CellRange | null {

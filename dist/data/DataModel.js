@@ -1,3 +1,4 @@
+import { MIN_SALARY, TOTAL_COLUMNS, TOTAL_ROWS } from "../utils/Constants.js";
 export class DataModel {
     constructor() {
         // Stores all row data
@@ -10,8 +11,8 @@ export class DataModel {
             "age",
             "salary"
         ];
-        this.generateMockData(100000);
-        this.generateRemainingColumns(500);
+        this.generateMockData(TOTAL_ROWS);
+        this.generateRemainingColumns(TOTAL_COLUMNS);
     }
     /**
      * Generates sample employee records
@@ -43,7 +44,7 @@ export class DataModel {
                 firstName: firstNames[i % firstNames.length],
                 lastName: lastNames[i % lastNames.length],
                 age: 20 + (i % 25),
-                salary: 50000 + (i % 10) * 10000
+                salary: MIN_SALARY + (i % 10) * 10000
             });
         }
     }

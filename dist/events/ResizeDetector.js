@@ -11,10 +11,12 @@ export class ResizeDetector {
             return { type: null, index: -1 };
         }
         const scrollLeft = this.viewPort.getScrollLeft();
-        for (let col = this.viewPort.getFirstVisibleColumn(); col <= this.viewPort.getLastVisibleColumn(); col++) {
-            const worldRightX = ROW_HEADER_WIDTH +
-                this.rowColumnManager.getColumnX(col) +
-                this.rowColumnManager.getColumnWidth(col);
+        const firstCol = this.viewPort.getFirstVisibleColumn();
+        const lastCol = this.viewPort.getLastVisibleColumn();
+        let currentX = ROW_HEADER_WIDTH + this.rowColumnManager.getColumnX(firstCol);
+        for (let col = firstCol; col <= lastCol; col++) {
+            const colWidth = this.rowColumnManager.getColumnWidth(col);
+            const worldRightX = currentX + colWidth;
             const screenRightX = worldRightX - scrollLeft;
             if (Math.abs(mouseX - screenRightX) <= RESIZE_MARGIN) {
                 return {
@@ -22,12 +24,15 @@ export class ResizeDetector {
                     index: col
                 };
             }
+            currentX += colWidth;
         }
         const scrollTop = this.viewPort.getScrollTop();
-        for (let row = this.viewPort.getFirstVisibleRow(); row <= this.viewPort.getLastVisibleRow(); row++) {
-            const worldBottomY = COLUMN_HEADER_HEIGHT +
-                this.rowColumnManager.getRowY(row) +
-                this.rowColumnManager.getRowHeight(row);
+        const firstRow = this.viewPort.getFirstVisibleRow();
+        const lastRow = this.viewPort.getLastVisibleRow();
+        let currentY = COLUMN_HEADER_HEIGHT + this.rowColumnManager.getRowY(firstRow);
+        for (let row = firstRow; row <= lastRow; row++) {
+            const rowHeight = this.rowColumnManager.getRowHeight(row);
+            const worldBottomY = currentY + rowHeight;
             const screenBottomY = worldBottomY - scrollTop;
             if (Math.abs(mouseY - screenBottomY) <= RESIZE_MARGIN) {
                 return {
@@ -35,6 +40,7 @@ export class ResizeDetector {
                     index: row
                 };
             }
+            currentY += rowHeight;
         }
         return {
             type: null,

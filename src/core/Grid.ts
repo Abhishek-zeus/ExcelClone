@@ -174,7 +174,6 @@ export class Grid {
             if (row !== -1) {
                 this.selectionManager.selectRow(row, Infinity);
                 needsRender = true;
-                this.calculateStats();
             }
             this.queueRender(needsRender);
             return;
@@ -186,7 +185,6 @@ export class Grid {
             if (column !== -1) {
                 this.selectionManager.selectColumn(column, Infinity); //passed Infinity for selecting even after scrolling
                 needsRender = true;
-                this.calculateStats();
             }
             this.queueRender(needsRender);
             return;
@@ -204,7 +202,6 @@ export class Grid {
             this.isSelecting = true;
 
             this.selectionManager.selectCell(cell.row, cell.column);
-            this.calculateStats();
             needsRender = true;
         }
         this.queueRender(needsRender);
@@ -222,7 +219,7 @@ export class Grid {
         // Apply renderer's exact formulas to determine input tracking coordinates of the cell to fit into cell not on mouse's cursor
         const screenX =
             ROW_HEADER_WIDTH +
-            this.rowColumnManager.getColumnX(cell.column) ;
+            this.rowColumnManager.getColumnX(cell.column);
 
         const screenY =
             COLUMN_HEADER_HEIGHT +
@@ -246,13 +243,22 @@ export class Grid {
     }
 
     private onMouseMove(event: MouseEvent): void {
-        const resize = this.resizeDetector.detectResize(event.offsetX, event.offsetY);
-        if (resize.type === "ROW") {
-            this.canvas.style.cursor = "row-resize";
-        } else if (resize.type === "COLUMN") {
-            this.canvas.style.cursor = "col-resize";
-        } else {
-            this.canvas.style.cursor = "cell";
+        //If resizing and not selecting
+        if (!this.isSelecting && this.resizeState === null) {
+            const resize = this.resizeDetector.detectResize(
+                event.offsetX,
+                event.offsetY
+            );
+
+            if (resize.type === "ROW") {
+                this.canvas.style.cursor = "row-resize";
+            }
+            else if (resize.type === "COLUMN") {
+                this.canvas.style.cursor = "col-resize";
+            }
+            else {
+                this.canvas.style.cursor = "cell";
+            }
         }
 
         //Flag to track if data changed and requires a screen update
@@ -285,7 +291,6 @@ export class Grid {
             if (cell && this.selectionStart) {
                 this.selectionManager.selectRange(this.selectionStart.row, this.selectionStart.column, cell.row, cell.column);
                 needsRender = true;
-                this.calculateStats();
             }
         }
         else if (this.isSelecting) {
@@ -380,20 +385,21 @@ export class Grid {
         if (needsRender && !this.animationFrameId) {
             this.animationFrameId = requestAnimationFrame(() => {
                 this.render();
+                this.calculateStats();
                 this.animationFrameId = null;
             });
         }
     }
 
     // Helper Method for calculating statistics
-    private calculateStats(): void{
+    private calculateStats(): void {
         const selection = this.selectionManager.getSelection();
         if (selection) {
             const stats = this.statisticsCalculator.calculate(selection, this.dataModel);
             // console.log(stats);
             this.statusBar.show(stats);
         }
-        else{
+        else {
             this.statusBar.clear();
         }
     }

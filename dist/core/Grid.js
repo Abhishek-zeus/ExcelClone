@@ -4,7 +4,7 @@ import { EditorManager } from "../editor/EditorManager.js";
 import { Viewport } from "./Viewport.js";
 import { MouseHandler } from "../events/MouseHandler.js";
 import { SelectionManager } from "../selection/SelectionManager.js";
-import { CELL_HEIGHT, CELL_WIDTH, COLUMN_HEADER_HEIGHT, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT, ROW_HEADER_WIDTH } from "../utils/Constants.js";
+import { CELL_HEIGHT, CELL_WIDTH, COLUMN_HEADER_HEIGHT, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT, ROW_HEADER_WIDTH, TOTAL_COLUMNS, TOTAL_ROWS } from "../utils/Constants.js";
 import { ResizeDetector } from "../events/ResizeDetector.js";
 import { RowColumnManager } from "./RowColumnManager.js";
 import { CommandInvoker } from "../commands/CommandInvoker.js";
@@ -43,8 +43,8 @@ export class Grid {
         this.scrollContent.style.position = 'absolute';
         this.scrollContent.style.top = '0';
         this.scrollContent.style.left = '0';
-        this.scrollContent.style.width = `${500 * CELL_WIDTH}px`;
-        this.scrollContent.style.height = `${100000 * CELL_HEIGHT}px`;
+        this.scrollContent.style.width = `${TOTAL_COLUMNS * CELL_WIDTH}px`;
+        this.scrollContent.style.height = `${TOTAL_ROWS * CELL_HEIGHT}px`;
         this.scrollContent.style.pointerEvents = 'none'; // Passes clicks directly to canvas
         this.scrollContainer.appendChild(this.scrollContent);
         this.statusBar = new StatusBar();
@@ -96,7 +96,6 @@ export class Grid {
             if (row !== -1) {
                 this.selectionManager.selectRow(row, Infinity);
                 needsRender = true;
-                this.calculateStats();
             }
             this.queueRender(needsRender);
             return;
@@ -107,7 +106,6 @@ export class Grid {
             if (column !== -1) {
                 this.selectionManager.selectColumn(column, Infinity); //passed Infinity for selecting even after scrolling
                 needsRender = true;
-                this.calculateStats();
             }
             this.queueRender(needsRender);
             return;
@@ -119,7 +117,6 @@ export class Grid {
             this.selectionStart = cell;
             this.isSelecting = true;
             this.selectionManager.selectCell(cell.row, cell.column);
-            this.calculateStats();
             needsRender = true;
         }
         this.queueRender(needsRender);
@@ -145,15 +142,18 @@ export class Grid {
         });
     }
     onMouseMove(event) {
-        const resize = this.resizeDetector.detectResize(event.offsetX, event.offsetY);
-        if (resize.type === "ROW") {
-            this.canvas.style.cursor = "row-resize";
-        }
-        else if (resize.type === "COLUMN") {
-            this.canvas.style.cursor = "col-resize";
-        }
-        else {
-            this.canvas.style.cursor = "default";
+        //If resizing and not selecting
+        if (!this.isSelecting && this.resizeState === null) {
+            const resize = this.resizeDetector.detectResize(event.offsetX, event.offsetY);
+            if (resize.type === "ROW") {
+                this.canvas.style.cursor = "row-resize";
+            }
+            else if (resize.type === "COLUMN") {
+                this.canvas.style.cursor = "col-resize";
+            }
+            else {
+                this.canvas.style.cursor = "cell";
+            }
         }
         //Flag to track if data changed and requires a screen update
         let needsRender = false;
@@ -179,7 +179,6 @@ export class Grid {
             if (cell && this.selectionStart) {
                 this.selectionManager.selectRange(this.selectionStart.row, this.selectionStart.column, cell.row, cell.column);
                 needsRender = true;
-                this.calculateStats();
             }
         }
         else if (this.isSelecting) {
@@ -249,6 +248,7 @@ export class Grid {
         if (needsRender && !this.animationFrameId) {
             this.animationFrameId = requestAnimationFrame(() => {
                 this.render();
+                this.calculateStats();
                 this.animationFrameId = null;
             });
         }

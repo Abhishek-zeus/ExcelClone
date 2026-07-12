@@ -23,7 +23,15 @@ export class SelectionManager {
      * valid, well-ordered range.
      */
     selectRange(startRow, startColumn, endRow, endColumn) {
-        this.selectedRange = new CellRange(Math.min(startRow, endRow), Math.min(startColumn, endColumn), Math.max(startRow, endRow), Math.max(startColumn, endColumn));
+        if (this.selectedRange) {
+            this.selectedRange.startRow = Math.min(startRow, endRow);
+            this.selectedRange.startColumn = Math.min(startColumn, endColumn);
+            this.selectedRange.endRow = Math.max(startRow, endRow);
+            this.selectedRange.endColumn = Math.max(startColumn, endColumn);
+        }
+        else {
+            this.selectedRange = new CellRange(Math.min(startRow, endRow), Math.min(startColumn, endColumn), Math.max(startRow, endRow), Math.max(startColumn, endColumn));
+        }
     }
     getSelection() {
         return this.selectedRange;

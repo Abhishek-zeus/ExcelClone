@@ -26,25 +26,27 @@ export class MouseHandler {
         let column = -1;
         let startColumn = this.viewport.getFirstVisibleColumn();
         let lastColumn = this.viewport.getLastVisibleColumn();
+        let currentX = this.rowColumnManager.getColumnX(startColumn);
         for (let col = startColumn; col <= lastColumn; col++) {
-            let currentX = this.rowColumnManager.getColumnX(col);
             const width = this.rowColumnManager.getColumnWidth(col);
             if (actualX >= currentX && actualX < currentX + width) {
                 column = col;
                 break; // Found the column index! Exit loop early.
             }
+            currentX += width;
         }
         // Variable Height row lookup loop
         let row = -1;
         let startRow = this.viewport.getFirstVisibleRow();
         let endRow = this.viewport.getLastVisibleRow();
+        let currentY = this.rowColumnManager.getRowY(startRow);
         for (let r = startRow; r <= endRow; r++) {
-            let currentY = this.rowColumnManager.getRowY(r);
             const height = this.rowColumnManager.getRowHeight(r);
             if (actualY >= currentY && actualY < currentY + height) {
                 row = r;
                 break; // Found the row index! Exit loop early.
             }
+            currentY += height;
         }
         // Safety fallback: if mouse is clicked beyond computed layout dimensions
         if (row === -1 || column === -1) {
