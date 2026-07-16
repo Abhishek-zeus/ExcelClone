@@ -23,6 +23,44 @@ The project also demonstrates software engineering concepts including:
 - Canvas Rendering
  
 ---
+
+# Architecture Diagram
+
+```mermaid
+graph TD
+ 
+    Grid["Grid (Application Coordinator)"]
+ 
+    Viewport["Viewport"]
+    MouseHandler["MouseHandler"]
+    Renderer["CanvasRenderer"]
+    HeaderRenderer["HeaderRenderer"]
+    DataModel["DataModel"]
+    SelectionManager["SelectionManager"]
+    EditorManager["EditorManager"]
+    ResizeDetector["ResizeDetector"]
+    RowColumnManager["RowColumnManager"]
+    StatisticsCalculator["StatisticsCalculator"]
+    StatusBar["StatusBar"]
+    CommandInvoker["CommandInvoker"]
+ 
+    Grid --> Viewport
+    Grid --> MouseHandler
+    Grid --> Renderer
+    Grid --> DataModel
+    Grid --> SelectionManager
+    Grid --> EditorManager
+    Grid --> ResizeDetector
+    Grid --> RowColumnManager
+    Grid --> StatisticsCalculator
+    Grid --> StatusBar
+    Grid --> CommandInvoker
+ 
+    Renderer --> HeaderRenderer
+```
+
+---
+
  
 # Technologies Used
  
@@ -122,6 +160,49 @@ Supports:
 - Repaint only when required
  
 ---
+
+# Rendering Pipeline
+
+```mermaid
+flowchart TD
+ 
+A[User Scrolls / Updates Data]
+ 
+-->
+ 
+B[Viewport Calculates Visible Area]
+ 
+-->
+ 
+C[Grid.render()]
+ 
+-->
+ 
+D[CanvasRenderer.render()]
+ 
+D -->
+ 
+E[Draw Grid]
+ 
+D -->
+ 
+F[Draw Cell Contents]
+ 
+D -->
+ 
+G[Draw Selection]
+ 
+D -->
+ 
+H[Draw Headers]
+ 
+E --> I[Canvas Updated]
+F --> I
+G --> I
+H --> I
+```
+
+---
  
 # Folder Structure
  
@@ -141,6 +222,10 @@ src
 └── index.ts
 ```
  
+---
+
+# Rendering Pipeline
+
 ---
  
 # Major Classes
@@ -288,6 +373,166 @@ Maintains
  
 Executes commands implementing Interface Command.ts.
  
+---
+
+# Class Diagram
+
+```mermaid
+classDiagram
+ 
+class Grid{
++render()
++registerEvents()
+}
+ 
+class Viewport{
++getFirstVisibleRow()
++getLastVisibleRow()
++getFirstVisibleColumn()
++getLastVisibleColumn()
+}
+ 
+class CanvasRenderer{
++render()
+-drawGrid()
+-drawSelection()
+}
+ 
+class HeaderRenderer{
++drawRowHeaders()
++drawColumnHeaders()
+}
+ 
+class DataModel{
++getCellValue()
++setCellValue()
+}
+ 
+class SelectionManager{
++selectCell()
++selectRange()
++getSelection()
+}
+ 
+class EditorManager{
++startEditing()
+}
+ 
+class MouseHandler{
++getCellFromMouse()
++getRowFromMouse()
++getColumnFromMouse()
+}
+ 
+class RowColumnManager{
++getRowHeight()
++getColumnWidth()
++setRowHeight()
++setColumnWidth()
+}
+ 
+Grid --> CanvasRenderer
+Grid --> Viewport
+Grid --> MouseHandler
+Grid --> DataModel
+Grid --> SelectionManager
+Grid --> EditorManager
+Grid --> RowColumnManager
+ 
+CanvasRenderer --> HeaderRenderer
+CanvasRenderer --> DataModel
+CanvasRenderer --> SelectionManager
+CanvasRenderer --> Viewport
+CanvasRenderer --> RowColumnManager
+```
+
+---
+
+# Editing Workflow
+
+```mermaid
+sequenceDiagram
+ 
+actor User
+ 
+participant MouseHandler
+participant Grid
+participant EditorManager
+participant DataModel
+participant CanvasRenderer
+ 
+User->>MouseHandler: Double Click
+ 
+MouseHandler->>Grid: Cell Position
+ 
+Grid->>EditorManager: Open Editor
+ 
+User->>EditorManager: Enter Value
+ 
+EditorManager->>DataModel: Save Cell
+ 
+Grid->>CanvasRenderer: render()
+ 
+CanvasRenderer-->>User: Updated Cell
+```
+
+---
+
+# Command Pattern
+
+```mermaid
+classDiagram
+ 
+class ICommand{
+<<interface>>
++execute()
++undo()
+}
+ 
+class EditCellCommand
+class ResizeColumnCommand
+class ResizeRowCommand
+ 
+class CommandInvoker{
++executeCommand()
++undo()
++redo()
+}
+ 
+ICommand <|.. EditCellCommand
+ICommand <|.. ResizeColumnCommand
+ICommand <|.. ResizeRowCommand
+ 
+CommandInvoker --> ICommand
+```
+
+---
+
+# Virtual Rendering
+
+```mermaid
+flowchart LR
+ 
+A["100,000 Rows × 500 Columns"]
+ 
+-->
+ 
+B["Viewport"]
+ 
+-->
+ 
+C["Visible Rows & Columns"]
+ 
+-->
+ 
+D["CanvasRenderer"]
+ 
+-->
+ 
+E["Canvas"]
+```
+ 
+
 ---
  
 # Object-Oriented Programming
