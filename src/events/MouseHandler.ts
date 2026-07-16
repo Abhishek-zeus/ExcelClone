@@ -1,8 +1,6 @@
 import { RowColumnManager } from "../core/RowColumnManager.js";
 import { Viewport } from "../core/Viewport.js";
 import {
-    CELL_HEIGHT,
-    CELL_WIDTH,
     ROW_HEADER_WIDTH,
     COLUMN_HEADER_HEIGHT
 } from "../utils/Constants.js";

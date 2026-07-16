@@ -14,6 +14,10 @@ import { ResizeColumnCommand } from "../commands/ResizeColumnCommand.js";
 import { ResizeRowCommand } from "../commands/ResizeRowCommand.js";
 import { StatisticsCalculator } from "../selection/StatisticsCalculator.js";
 import { StatusBar } from "../ui/StatusBar.js";
+import { InteractionManager } from "../interaction/InteractionManager.js"
+import { RenderScheduler } from "../renderer/RenderScheduler.js";
+import { KeyboardController } from "../keyboard/KeyboardContoller.js";
+import { StatisticsController } from "../selection/StatisticsController.js";
 
 
 //  Grid is the "manager"/orchestrator of the whole application.
@@ -36,12 +40,15 @@ export class Grid {
     private scrollContainer!: HTMLDivElement;
     private scrollContent!: HTMLDivElement;
     private commandInvoker: CommandInvoker;
-    private animationFrameId: number | null = null;
     private statisticsCalculator: StatisticsCalculator;
     private statusBar: StatusBar;
 
     private isSelecting: boolean = false;
-    private selectionStart: MouseCell | null = null
+    private selectionStart: MouseCell | null = null;
+    private interactionManager: InteractionManager;
+    private renderScheduler: RenderScheduler;
+    private statisticsController: StatisticsController;
+    private keyBoardController: KeyboardController;
 
     constructor() {
         this.canvas = document.getElementById(
@@ -54,7 +61,6 @@ export class Grid {
         this.dataModel = new DataModel();
 
         this.selectionManager = new SelectionManager();
-
 
         this.rowColumnManager = new RowColumnManager();
 
@@ -87,6 +93,13 @@ export class Grid {
 
         this.statusBar = new StatusBar();
 
+        this.statisticsController = new StatisticsController(this.selectionManager, this.statisticsCalculator, this.statusBar, this.dataModel);
+
+        this.renderScheduler = new RenderScheduler(
+            this.render.bind(this), 
+            this.statisticsController
+        );
+
 
         this.renderer = new CanvasRenderer(
             this.canvas,
@@ -96,16 +109,37 @@ export class Grid {
             this.rowColumnManager
         );
 
+        this.keyBoardController = new KeyboardController(
+            this.commandInvoker, 
+            this.renderScheduler, 
+            this.editorManager
+        );
+
+        this.interactionManager = new InteractionManager(
+            this.canvas, 
+            this.viewport, 
+            this.mouseHandler, 
+            this.selectionManager, 
+            this.resizeDetector, 
+            this.rowColumnManager, 
+            this.commandInvoker, 
+            this.renderer, 
+            this.renderScheduler
+        );
+
+
         this.registerEvents();
 
         this.render();
     }
 
+
     private registerEvents(): void {
         //Select
         this.canvas.addEventListener(
-            "mousedown",
-            this.onMouseDown.bind(this)
+            "pointerdown",
+            this.interactionManager.onPointerDown.bind(this)
+            // this.onPointerDown.bind(this)
         );
 
         //double-click event
@@ -116,14 +150,16 @@ export class Grid {
 
         //Resize Icon
         this.canvas.addEventListener(
-            "mousemove",
-            this.onMouseMove.bind(this)
+            "pointermove",
+            this.interactionManager.onPointerMove.bind(this)
+            // this.onPointerMove.bind(this)
         );
 
-        //Mouse-Up
+        //pointer-Up
         window.addEventListener(
-            "mouseup",
-            this.onMouseUp.bind(this)
+            "pointerup",
+            this.interactionManager.onPointerUp.bind(this)
+            // this.onPointerUp.bind(this)
         );
 
         //Scroll Bar
@@ -134,78 +170,12 @@ export class Grid {
 
         window.addEventListener(
             "keydown",
-            this.onKeyDown.bind(this)
+            this.keyBoardController.onKeyDown.bind(this)
         );
 
     }
 
-    private onMouseDown(event: MouseEvent): void {
-        const resizeInfo = this.resizeDetector.detectResize(event.offsetX, event.offsetY);
-
-        //Flag to track if data changed and requires a screen update
-        let needsRender = false;
-
-        //if resizeinfo exists then do not select, instead start resizing
-        if (resizeInfo.type === "COLUMN") {
-            this.resizeState = {
-                type: "COLUMN",
-                index: resizeInfo.index,
-                startMouseX: event.offsetX,
-                startMouseY: event.offsetY,
-                originalWidth: this.rowColumnManager.getColumnWidth(resizeInfo.index),
-            };
-            return; // Stop execution so we don't trigger cell selection
-        }
-
-        if (resizeInfo.type === "ROW") {
-            this.resizeState = {
-                type: "ROW",
-                index: resizeInfo.index,
-                startMouseX: event.offsetX,
-                startMouseY: event.offsetY,
-                originalHeight: this.rowColumnManager.getRowHeight(resizeInfo.index), // Tracks row height
-            };
-            return; // Stop execution so we don't trigger cell selection
-        }
-
-        // If row header is selected
-        if (event.offsetX < ROW_HEADER_WIDTH) {
-            const row = this.mouseHandler.getRowFromMouse(event.offsetY);
-            if (row !== -1) {
-                this.selectionManager.selectRow(row, Infinity);
-                needsRender = true;
-            }
-            this.queueRender(needsRender);
-            return;
-        }
-
-        // If column header is selected
-        if (event.offsetY < COLUMN_HEADER_HEIGHT) {
-            const column = this.mouseHandler.getColumnFromMouse(event.offsetX);
-            if (column !== -1) {
-                this.selectionManager.selectColumn(column, Infinity); //passed Infinity for selecting even after scrolling
-                needsRender = true;
-            }
-            this.queueRender(needsRender);
-            return;
-        }
-
-        // Else
-        const cell = this.mouseHandler.getCellFromMouse(
-            event.offsetX,
-            event.offsetY
-        );
-
-        if (cell) {
-            //Select 1 cell on Mouse Down 
-            this.selectionStart = cell;
-            this.isSelecting = true;
-
-            this.selectionManager.selectCell(cell.row, cell.column);
-            needsRender = true;
-        }
-        this.queueRender(needsRender);
-    }
+    
 
     private onDoubleClick(event: MouseEvent): void {
         //Ask mousehandler what cell was clicked
@@ -216,7 +186,7 @@ export class Grid {
 
         if (!cell) return;
 
-        // Apply renderer's exact formulas to determine input tracking coordinates of the cell to fit into cell not on mouse's cursor
+        // Apply renderer's exact formulas to determine input tracking coordinates of the cell to fit into cell not on Pointer's cursor
         const screenX =
             ROW_HEADER_WIDTH +
             this.rowColumnManager.getColumnX(cell.column);
@@ -242,166 +212,12 @@ export class Grid {
 
     }
 
-    private onMouseMove(event: MouseEvent): void {
-        //If resizing and not selecting
-        if (!this.isSelecting && this.resizeState === null) {
-            const resize = this.resizeDetector.detectResize(
-                event.offsetX,
-                event.offsetY
-            );
-
-            if (resize.type === "ROW") {
-                this.canvas.style.cursor = "row-resize";
-            }
-            else if (resize.type === "COLUMN") {
-                this.canvas.style.cursor = "col-resize";
-            }
-            else {
-                this.canvas.style.cursor = "cell";
-            }
-        }
-
-        //Flag to track if data changed and requires a screen update
-        let needsRender = false;
-
-        if (this.resizeState?.type === "COLUMN") {
-            const deltaX = event.offsetX - this.resizeState.startMouseX;    //Difference in start and end
-            const newWidth = this.resizeState.originalWidth! + deltaX;
-
-            //update rowColumnManager - as per mincolumnwidth --Mutates real time dragging
-            this.rowColumnManager.setColumnWidth(this.resizeState.index, Math.max(newWidth, MIN_COLUMN_WIDTH));
-
-            //Render
-            needsRender = true;
-        }
-        else if (this.resizeState?.type === "ROW") {
-            const deltaY = event.offsetY - this.resizeState.startMouseY;    //Difference in start and end
-            const newHeight = this.resizeState.originalHeight! + deltaY;
-
-            //update rowColumnManager - as per mincolumnwidth --Mutates real time dragging
-            this.rowColumnManager.setRowHeight(this.resizeState.index, Math.max(newHeight, MIN_ROW_HEIGHT));
-
-            //Render
-            needsRender = true;
-        }
-
-        //MULTIPLE SELECTION LOGIC IF Resize is not Triggered
-        if (this.isSelecting && event.buttons === 1) {
-            const cell = this.mouseHandler.getCellFromMouse(event.offsetX, event.offsetY);
-            if (cell && this.selectionStart) {
-                this.selectionManager.selectRange(this.selectionStart.row, this.selectionStart.column, cell.row, cell.column);
-                needsRender = true;
-            }
-        }
-        else if (this.isSelecting) {
-            //Reset selection state if they click anything else mid-drag
-            this.isSelecting = false;
-        }
-
-
-        //Throttled Render Phase, 60 / 120FPS 
-        this.queueRender(needsRender);
-    }
-
-    //When a user releases his finger
-    private onMouseUp(): void {
-
-        if (this.resizeState) {
-            if (this.resizeState.type === "COLUMN") {
-                const finalWidth = this.rowColumnManager.getColumnWidth(this.resizeState.index);
-
-                // only push to history if the user actually changed the dimension
-                if (finalWidth != this.resizeState.originalWidth) {
-                    //Command is created
-                    const command = new ResizeColumnCommand(
-                        this.rowColumnManager,
-                        this.resizeState.index,
-                        this.resizeState.originalWidth!,
-                        finalWidth
-                    );
-                    //And sent
-                    this.commandInvoker.executeCommand(command);
-                }
-            }
-            else if (this.resizeState.type === "ROW") {
-                const finalHeight = this.rowColumnManager.getRowHeight(this.resizeState.index);
-
-                // only push to history if the user actually changed the dimension
-                if (finalHeight != this.resizeState.originalHeight) {
-                    const command = new ResizeRowCommand(
-                        this.rowColumnManager,
-                        this.resizeState.index,
-                        this.resizeState.originalHeight!,
-                        finalHeight
-                    );
-                    this.commandInvoker.executeCommand(command);
-                }
-            }
-        }
-
-        //clear the active operation token
-        this.selectionStart = null;
-        this.resizeState = null;
-        this.isSelecting = false;
-
-        this.queueRender(true);
-    }
 
     //Scroll bar
     private onScroll(): void {
         this.viewport.setScrollTop(this.scrollContainer.scrollTop);
         this.viewport.setScrollLeft(this.scrollContainer.scrollLeft);
         this.render();
-    }
-
-    //Keys
-    private onKeyDown(event: KeyboardEvent): void {
-        if (event.ctrlKey && event.key.toLowerCase() === "z") {
-            event.preventDefault(); //stops browsers default action for that key
-
-            //If text editor is opened, Close it
-            if (this.editorManager && this.editorManager.isEditing === true) {
-                this.editorManager.destroy();
-            }
-
-            this.commandInvoker.undo();
-            this.render();
-        }
-        if (event.ctrlKey && event.key.toLowerCase() === "y") {
-            event.preventDefault();
-
-            //If text editor is opened, Close it
-            if (this.editorManager && this.editorManager.isEditing === true) {
-                this.editorManager.destroy();
-            }
-
-            this.commandInvoker.redo();
-            this.render();
-        }
-    }
-
-    // Helper method to keep requestAnimationFrame DRY and centralized
-    private queueRender(needsRender: boolean): void {
-        if (needsRender && !this.animationFrameId) {
-            this.animationFrameId = requestAnimationFrame(() => {
-                this.render();
-                this.calculateStats();
-                this.animationFrameId = null;
-            });
-        }
-    }
-
-    // Helper Method for calculating statistics
-    private calculateStats(): void {
-        const selection = this.selectionManager.getSelection();
-        if (selection) {
-            const stats = this.statisticsCalculator.calculate(selection, this.dataModel);
-            // console.log(stats);
-            this.statusBar.show(stats);
-        }
-        else {
-            this.statusBar.clear();
-        }
     }
 
     /**
