@@ -13,16 +13,11 @@ import { RowColumnManager } from "../core/RowColumnManager.js";
 import { ExcelColumnHelper } from "../utils/ExcelColumnHelper.js";
 import { HeaderRenderer } from "./HeaderRenderer.js";
 
-/**
- * CanvasRenderer is responsible ONLY for drawing.
- *
- * It never decides which rows/columns are visible (that's the
- * Viewport's job), never stores the actual cell values (that's the
- * DataModel's job) and never knows about the mouse or commands.
- *
- * Grid tells it what to draw (via the startRow/endRow/... parameters
- * that come from the Viewport); the Renderer just draws it.
- */
+
+//   CanvasRenderer is responsible ONLY for drawing.
+//   It never decides which rows/columns are visible (that's the Viewport's job), never stores the actual cell values (that's the DataModel's job) and never knows about the mouse or commands.
+//   Grid tells it what to draw (via the startRow/endRow/... parameter that come from the Viewport); the Renderer just draws it.
+ 
 export class CanvasRenderer {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
@@ -161,11 +156,11 @@ export class CanvasRenderer {
         }
     }
 
-    /**
-     * Draws the current selection (if any) as a translucent blue
-     * overlay, exactly like Excel. The Renderer only ever reads the
-     * selection - it never modifies it.
-     */
+    
+    //   Draws the current selection (if any) as a translucent blue
+    //   overlay, exactly like Excel. The Renderer only ever reads the
+    //   selection, it never modifies it.
+     
     private drawSelection(): void {
         const selection = this.selectionManager.getSelection();
         if (!selection) return;

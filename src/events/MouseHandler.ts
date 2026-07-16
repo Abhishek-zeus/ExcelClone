@@ -12,12 +12,11 @@ export interface MouseCell {
     column: number;
 }
 
-/**
- * Converts raw mouse pixel coordinates (event.offsetX/offsetY) into
- * grid coordinates (row/column). Needs the Viewport because the
- * current scroll position affects which row/column a given pixel
- * actually corresponds to.
- */
+//   Converts raw mouse pixel coordinates (event.offsetX/offsetY) into
+//   grid coordinates (row/column). Needs the Viewport because the
+//   current scroll position affects which row/column a given pixel
+//   actually corresponds to.
+
 export class MouseHandler {
     constructor(private viewport: Viewport, private rowColumnManager: RowColumnManager) {}
 

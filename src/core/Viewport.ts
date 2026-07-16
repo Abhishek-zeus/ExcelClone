@@ -1,19 +1,17 @@
 import { CELL_HEIGHT, CELL_WIDTH } from "../utils/Constants.js";
 import { RowColumnManager } from "./RowColumnManager.js";
 
-/**
- * Viewport is responsible ONLY for figuring out which rows/columns
- * are currently visible based on the current scroll position.
- *
- * It does NOT know about:
- *  - the DataModel
- *  - the CanvasRenderer
- *  - the Mouse
- *  - Selection
- *
- * It only knows: scrollTop, scrollLeft, canvasWidth, canvasHeight.
- * Everything else can be calculated from those four values.
- */
+
+//  Viewport is responsible ONLY for figuring out which rows/columns are currently visible based on the current scroll position.
+//  It does NOT know about:
+//   - the DataModel
+//   - the CanvasRenderer
+//   - the Mouse
+//   - Selection
+
+//  It only knows: scrollTop, scrollLeft, canvasWidth, canvasHeight.
+//  Everything else can be calculated from those four values.
+ 
 export class Viewport {
     private scrollTop: number = 0;
     private scrollLeft: number = 0;

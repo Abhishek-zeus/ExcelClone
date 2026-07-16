@@ -15,12 +15,12 @@ import { ResizeRowCommand } from "../commands/ResizeRowCommand.js";
 import { StatisticsCalculator } from "../selection/StatisticsCalculator.js";
 import { StatusBar } from "../ui/StatusBar.js";
 
-/**
- * Grid is the "manager"/orchestrator of the whole application.
- * It creates every other class and wires them together, but it
- * never draws anything itself, never stores data itself, and never
- * calculates selection/viewport logic itself. It just coordinates.
- */
+
+//  Grid is the "manager"/orchestrator of the whole application.
+//  It creates every other class and wires them together, but it
+//  never draws anything itself, never stores data itself, and never
+//  calculates selection/viewport logic itself. It just coordinates.
+ 
 export class Grid {
     private canvas: HTMLCanvasElement;
 
