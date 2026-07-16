@@ -165,42 +165,23 @@ Supports:
 
 ```mermaid
 flowchart TD
- 
-A[User Scrolls / Updates Data]
- 
--->
- 
-B[Viewport Calculates Visible Area]
- 
--->
- 
-C[Grid.render()]
- 
--->
- 
-D[CanvasRenderer.render()]
- 
-D -->
- 
-E[Draw Grid]
- 
-D -->
- 
-F[Draw Cell Contents]
- 
-D -->
- 
-G[Draw Selection]
- 
-D -->
- 
-H[Draw Headers]
- 
-E --> I[Canvas Updated]
-F --> I
-G --> I
-H --> I
+    A[User Scrolls / Updates Data] --> B[Viewport Calculates Visible Area]
+    B --> C["Grid.render()"]
+    C --> D["CanvasRenderer.render()"]
+    
+    D --> E[Draw Grid]
+    D --> F[Draw Cell Contents]
+    D --> G[Draw Selection]
+    D --> H[Draw Headers]
+    
+    E --> I[Canvas Updated]
+    F --> I
+    G --> I
+    H --> I
 ```
+
+
+
 
 ---
  
@@ -222,10 +203,6 @@ src
 └── index.ts
 ```
  
----
-
-# Rendering Pipeline
-
 ---
  
 # Major Classes
@@ -444,66 +421,6 @@ CanvasRenderer --> DataModel
 CanvasRenderer --> SelectionManager
 CanvasRenderer --> Viewport
 CanvasRenderer --> RowColumnManager
-```
-
----
-
-# Editing Workflow
-
-```mermaid
-sequenceDiagram
- 
-actor User
- 
-participant MouseHandler
-participant Grid
-participant EditorManager
-participant DataModel
-participant CanvasRenderer
- 
-User->>MouseHandler: Double Click
- 
-MouseHandler->>Grid: Cell Position
- 
-Grid->>EditorManager: Open Editor
- 
-User->>EditorManager: Enter Value
- 
-EditorManager->>DataModel: Save Cell
- 
-Grid->>CanvasRenderer: render()
- 
-CanvasRenderer-->>User: Updated Cell
-```
-
----
-
-# Command Pattern
-
-```mermaid
-classDiagram
- 
-class ICommand{
-<<interface>>
-+execute()
-+undo()
-}
- 
-class EditCellCommand
-class ResizeColumnCommand
-class ResizeRowCommand
- 
-class CommandInvoker{
-+executeCommand()
-+undo()
-+redo()
-}
- 
-ICommand <|.. EditCellCommand
-ICommand <|.. ResizeColumnCommand
-ICommand <|.. ResizeRowCommand
- 
-CommandInvoker --> ICommand
 ```
 
 ---
