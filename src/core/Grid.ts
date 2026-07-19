@@ -18,7 +18,7 @@ import { InteractionManager } from "../interaction/InteractionManager.js"
 import { RenderScheduler } from "../renderer/RenderScheduler.js";
 import { KeyboardController } from "../keyboard/KeyboardContoller.js";
 import { StatisticsController } from "../selection/StatisticsController.js";
-
+import { HitTest } from "../interaction/Resolver/HitTest.js";
 
 //  Grid is the "manager"/orchestrator of the whole application.
 //  It creates every other class and wires them together, but it
@@ -45,6 +45,7 @@ export class Grid {
 
     private isSelecting: boolean = false;
     private selectionStart: MouseCell | null = null;
+    private hitTest: HitTest;
     private interactionManager: InteractionManager;
     private renderScheduler: RenderScheduler;
     private statisticsController: StatisticsController;
@@ -115,16 +116,21 @@ export class Grid {
             this.editorManager
         );
 
+        this.hitTest = new HitTest(this.mouseHandler,this.resizeDetector);
+
         this.interactionManager = new InteractionManager(
             this.canvas, 
             this.viewport, 
             this.mouseHandler, 
+            this.dataModel,
             this.selectionManager, 
             this.resizeDetector, 
             this.rowColumnManager, 
-            this.commandInvoker, 
+            this.commandInvoker,
+            this.editorManager, 
             this.renderer, 
-            this.renderScheduler
+            this.renderScheduler,
+            this.hitTest
         );
 
 
@@ -138,27 +144,27 @@ export class Grid {
         //Select
         this.canvas.addEventListener(
             "pointerdown",
-            this.interactionManager.onPointerDown.bind(this)
+            this.interactionManager.onPointerDown.bind(this.interactionManager)
             // this.onPointerDown.bind(this)
         );
 
         //double-click event
         this.canvas.addEventListener(
             "dblclick",
-            this.onDoubleClick.bind(this)
+            this.interactionManager.onDoubleClick.bind(this.interactionManager)
         );
 
         //Resize Icon
         this.canvas.addEventListener(
             "pointermove",
-            this.interactionManager.onPointerMove.bind(this)
+            this.interactionManager.onPointerMove.bind(this.interactionManager)
             // this.onPointerMove.bind(this)
         );
 
         //pointer-Up
         window.addEventListener(
             "pointerup",
-            this.interactionManager.onPointerUp.bind(this)
+            this.interactionManager.onPointerUp.bind(this.interactionManager)
             // this.onPointerUp.bind(this)
         );
 
@@ -170,47 +176,14 @@ export class Grid {
 
         window.addEventListener(
             "keydown",
-            this.keyBoardController.onKeyDown.bind(this)
+            this.keyBoardController.onKeyDown.bind(this.keyBoardController)
         );
 
     }
 
     
 
-    private onDoubleClick(event: MouseEvent): void {
-        //Ask mousehandler what cell was clicked
-        const cell = this.mouseHandler.getCellFromMouse(
-            event.offsetX,
-            event.offsetY
-        );
-
-        if (!cell) return;
-
-        // Apply renderer's exact formulas to determine input tracking coordinates of the cell to fit into cell not on Pointer's cursor
-        const screenX =
-            ROW_HEADER_WIDTH +
-            this.rowColumnManager.getColumnX(cell.column);
-
-        const screenY =
-            COLUMN_HEADER_HEIGHT +
-            this.rowColumnManager.getRowY(cell.row);
-
-        const value = this.dataModel.getCellValue(cell.row, cell.column);
-
-        this.editorManager.startEditing(cell.row, cell.column, screenX, screenY, this.rowColumnManager.getColumnWidth(cell.column), this.rowColumnManager.getRowHeight(cell.row), value,
-            (newValue: string) => {
-                // this.dataModel.setCellValue(cell.row, cell.column, newValue);
-                // this.render();
-
-                const oldValue = this.dataModel.getCellValue(cell.row, cell.column);
-                const command = new EditCellCommand(this.dataModel, cell.row, cell.column, oldValue, newValue);
-
-                this.commandInvoker.executeCommand(command);
-                this.render();
-            }
-        );
-
-    }
+    
 
 
     //Scroll bar
