@@ -1,8 +1,8 @@
-import { MouseCell } from "../../events/MouseHandler";
-import { ResizeState } from "../../models/ResizeState";
-import { InteractionManager } from "../InteractionManager";
-import { IdleState } from "./IdleState";
-import { InteractionState } from "./InteractionState";
+import { MouseCell } from "../../events/MouseHandler.js";
+import { ResizeState } from "../../models/ResizeState.js";
+import { InteractionManager } from "../InteractionManager.js";
+import { IdleState } from "./IdleState.js";
+import { InteractionState } from "./InteractionState.js";
 
 export class CellSelectionState implements InteractionState{
 

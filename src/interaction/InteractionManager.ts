@@ -11,24 +11,24 @@ import { COLUMN_HEADER_HEIGHT, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT, ROW_HEADER_WIDT
 import { ResizeColumnCommand } from "../commands/ResizeColumnCommand.js";
 import { ResizeRowCommand } from "../commands/ResizeRowCommand.js";
 import { InteractionState } from "./states/InteractionState.js";
-import { IdleState } from "./states/IdleState.js";
+
 import { DataModel } from "../data/DataModel.js";
 import { EditorManager } from "../editor/EditorManager.js";
+import { IdleState } from "./states/IdleState.js";
 import { EditCellCommand } from "../commands/EditCellCommand.js";
-import { CellSelectionState } from "./states/CellSelectionState.js";
-import { HitTest, InteractionResult } from "./Resolver/HitTest.js";
+import {CellSelectionState} from "./states/CellSelectionState.js";
+import { HitTest, InteractionResult, InteractionType } from "./Resolver/HitTest.js";
+import { HeaderSelectionState } from "./states/HeaderSelectionState.js";
+import { ColumnResizeState } from "./states/ColumnResizeState.js";
+import { RowResizeState } from "./states/RowResizeState.js";
+import { EditingState } from "./states/EditingState.js";
 
 
 
 //Owner of all Pointer down, up and move
 export class InteractionManager {
-    // private resizeState: ResizeState | null = null;
-    // private isSelecting = false;
-    // private selectionStart : MouseCell | null = null;
 
     private currentState: InteractionState;
-
-
 
     constructor(
         private canvas: HTMLCanvasElement,
@@ -77,6 +77,7 @@ export class InteractionManager {
 
 
     //.....................................................................................................................
+    // Share Holder methods
 
     public getSelectionManager(): SelectionManager {
         return this.selectionManager;
@@ -127,28 +128,36 @@ export class InteractionManager {
     }
 
 //.................................................................................................................................
-
+// 
 
     public goIdle(): void {
         this.currentState = new IdleState(this);
     }
 
-    public startCellSelection(interaction: InteractionResult): void {
+    public startCellSelection(event: PointerEvent): void {
         this.currentState = new CellSelectionState(this);
+        this.currentState.onPointerDown(event);
     }
 
-    public startHeaderSelection(interaction: InteractionResult): void {
-        this.currentState = new CellSelectionState(this);
+    public startHeaderSelection(event: PointerEvent): void {
+        this.currentState = new HeaderSelectionState(this);
+        this.currentState.onPointerDown(event);
     }
 
-    public startColumnResize(interaction: InteractionResult): void {
-        this.currentState = new CellSelectionState(this);
+    public startColumnResize(event: PointerEvent): void {
+        this.currentState = new ColumnResizeState(this);
+        this.currentState.onPointerDown(event);
     }
 
-    public startRowResize(interaction: InteractionResult): void {
-        this.currentState = new CellSelectionState(this);
+    public startRowResize(event: PointerEvent): void {
+        this.currentState = new RowResizeState(this);
+        this.currentState.onPointerDown(event);
     }
 
+    public startEditing(event: MouseEvent): void {
+        this.currentState = new EditingState(this);
+        this.currentState.onDoubleClick(event);
+    }
 
 
 }

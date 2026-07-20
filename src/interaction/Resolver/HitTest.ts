@@ -1,6 +1,6 @@
-import { MouseCell, MouseHandler } from "../../events/MouseHandler";
-import { ResizeDetector } from "../../events/ResizeDetector";
-import { COLUMN_HEADER_HEIGHT, ROW_HEADER_WIDTH } from "../../utils/Constants";
+import { MouseCell, MouseHandler } from "../../events/MouseHandler.js";
+import { ResizeDetector } from "../../events/ResizeDetector.js";
+import { COLUMN_HEADER_HEIGHT, ROW_HEADER_WIDTH } from "../../utils/Constants.js";
 
 export enum InteractionType {
     CELL,
@@ -51,12 +51,14 @@ export class HitTest {
 
         // Header ?
         if (event.offsetX < ROW_HEADER_WIDTH) {
+            console.log("ROW HEADER");
             return {
                 type: InteractionType.ROW_HEADER,
                 mouseCell: mouseCell
             }
         }
         if (event.offsetY < COLUMN_HEADER_HEIGHT) {
+            console.log("COLUMN HEADER");
             return {
                 type: InteractionType.COLUMN_HEADER,
                 mouseCell: mouseCell
