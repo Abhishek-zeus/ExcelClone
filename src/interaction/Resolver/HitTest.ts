@@ -27,6 +27,22 @@ export class HitTest {
         const mouseCell =
             this.mouseHandler.getCellFromMouse(event.offsetX, event.offsetY);
 
+        // Header ?
+        if (event.offsetX < ROW_HEADER_WIDTH) {
+            console.log("ROW HEADER");
+            return {
+                type: InteractionType.ROW_HEADER,
+                mouseCell: mouseCell
+            }
+        }
+        if (event.offsetY < COLUMN_HEADER_HEIGHT) {
+            console.log("COLUMN HEADER");
+            return {
+                type: InteractionType.COLUMN_HEADER,
+                mouseCell: mouseCell
+            }
+        }
+
         if (!mouseCell) {
             return {
                 type: InteractionType.NONE,
@@ -45,22 +61,6 @@ export class HitTest {
         if (resizeInfo.type === "ROW") {
             return {
                 type: InteractionType.ROW_RESIZE,
-                mouseCell: mouseCell
-            }
-        }
-
-        // Header ?
-        if (event.offsetX < ROW_HEADER_WIDTH) {
-            console.log("ROW HEADER");
-            return {
-                type: InteractionType.ROW_HEADER,
-                mouseCell: mouseCell
-            }
-        }
-        if (event.offsetY < COLUMN_HEADER_HEIGHT) {
-            console.log("COLUMN HEADER");
-            return {
-                type: InteractionType.COLUMN_HEADER,
                 mouseCell: mouseCell
             }
         }

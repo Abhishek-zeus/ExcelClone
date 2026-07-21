@@ -9,32 +9,34 @@ export class IdleState implements InteractionState {
     onPointerDown(event: PointerEvent): void {
         // console.log("Idle -> pointer down");
         const interaction = this.interactionManager.getHitTest().resolve(event);
+        console.log(interaction.type.toString());
+
 
         switch (interaction.type) {
 
             case InteractionType.CELL:
                 this.interactionManager.startCellSelection(event);
-                console.log("CELL SELECTED");
+                // console.log("CELL SELECTED");
                 break;
 
             case InteractionType.ROW_HEADER:
                 this.interactionManager.startHeaderSelection(event);
-                console.log("ROW HEADER SELECTED");
+                // console.log("ROW HEADER SELECTED");
                 break;
 
             case InteractionType.COLUMN_HEADER:
                 this.interactionManager.startHeaderSelection(event);
-                console.log("COLUMN HEADER SELECTED");
+                // console.log("COLUMN HEADER SELECTED");
                 break;
 
             case InteractionType.COLUMN_RESIZE:
                 this.interactionManager.startColumnResize(event);
-                console.log("COL RESIZE SELECTED");
+                // console.log("COL RESIZE SELECTED");
                 break;
 
             case InteractionType.ROW_RESIZE:
                 this.interactionManager.startRowResize(event);
-                console.log("ROW RESIZE SELECTED");
+                // console.log("ROW RESIZE SELECTED");
                 break;
         }
 
@@ -46,7 +48,6 @@ export class IdleState implements InteractionState {
     onPointerUp(event: PointerEvent): void {
         //Nothing
         // console.log("Idle -> pointer up");
-        this.interactionManager.getCanvas().style.cursor = "cell";
     }
     onDoubleClick(event: MouseEvent): void {
         // console.log("Idle -> DBL click");

@@ -131,6 +131,7 @@ export class InteractionManager {
 // 
 
     public goIdle(): void {
+        this.getCanvas().style.cursor = "cell";
         this.currentState = new IdleState(this);
     }
 
