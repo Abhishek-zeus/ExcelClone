@@ -19,6 +19,7 @@ import { RenderScheduler } from "../renderer/RenderScheduler.js";
 import { KeyboardController } from "../keyboard/KeyboardContoller.js";
 import { StatisticsController } from "../selection/StatisticsController.js";
 import { HitTest } from "../interaction/Resolver/HitTest.js";
+import { NavigationController } from "../keyboard/NavigationController.js";
 
 //  Grid is the "manager"/orchestrator of the whole application.
 //  It creates every other class and wires them together, but it
@@ -50,6 +51,7 @@ export class Grid {
     private renderScheduler: RenderScheduler;
     private statisticsController: StatisticsController;
     private keyBoardController: KeyboardController;
+    private navigationController: NavigationController
 
     constructor() {
         this.canvas = document.getElementById(
@@ -93,6 +95,7 @@ export class Grid {
         this.scrollContainer.appendChild(this.scrollContent);
 
         this.statusBar = new StatusBar();
+        this.navigationController = new NavigationController(this.selectionManager, this.viewport);
 
         this.statisticsController = new StatisticsController(this.selectionManager, this.statisticsCalculator, this.statusBar, this.dataModel);
 
@@ -113,7 +116,8 @@ export class Grid {
         this.keyBoardController = new KeyboardController(
             this.commandInvoker, 
             this.renderScheduler, 
-            this.editorManager
+            this.editorManager,
+            this.navigationController
         );
 
         this.hitTest = new HitTest(this.mouseHandler,this.resizeDetector);

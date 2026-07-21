@@ -21,6 +21,16 @@ export class SelectionManager {
         );
     }
 
+    //   Sends the single selected cell
+    public selectedRow(): number{
+        return this.selectedRange?.startRow ?? -1;
+    }
+
+    public selectedColumn(): number{
+        return this.selectedRange?.startColumn ?? -1;
+    }
+
+
     
     //   Selects a rectangular range of cells. Coordinates are
     //   normalized with Math.min/Math.max so that dragging in any

@@ -6,6 +6,7 @@ export const COLUMN_HEADER_HEIGHT = 25;
 
 export const VISIBLE_ROWS = 20;
 export const VISIBLE_COLUMNS = 10;
+export const STATUS_BAR_HEIGHT = 24;
 
 export const GRID_LINE_COLOR = "#d9d9d9";
 export const HEADER_BACKGROUND = "#f3f3f3";
