@@ -1,27 +1,17 @@
 import { CommandInvoker } from "../commands/CommandInvoker.js";
 import { RowColumnManager } from "../core/RowColumnManager.js";
 import { Viewport } from "../core/Viewport.js";
-import { MouseCell, MouseHandler } from "../events/MouseHandler.js";
+import { MouseHandler } from "../events/MouseHandler.js";
 import { ResizeDetector } from "../events/ResizeDetector.js";
-import { ResizeState } from "../models/ResizeState.js";
 import { CanvasRenderer } from "../renderer/CanvasRenderer.js";
 import { SelectionManager } from "../selection/SelectionManager.js";
 import { RenderScheduler } from "../renderer/RenderScheduler.js";
-import { COLUMN_HEADER_HEIGHT, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT, ROW_HEADER_WIDTH } from "../utils/Constants.js";
-import { ResizeColumnCommand } from "../commands/ResizeColumnCommand.js";
-import { ResizeRowCommand } from "../commands/ResizeRowCommand.js";
 import { InteractionState } from "./states/InteractionState.js";
 
 import { DataModel } from "../data/DataModel.js";
 import { EditorManager } from "../editor/EditorManager.js";
 import { IdleState } from "./states/IdleState.js";
-import { EditCellCommand } from "../commands/EditCellCommand.js";
-import {CellSelectionState} from "./states/CellSelectionState.js";
-import { HitTest, InteractionResult, InteractionType } from "./Resolver/HitTest.js";
-import { HeaderSelectionState } from "./states/HeaderSelectionState.js";
-import { ColumnResizeState } from "./states/ColumnResizeState.js";
-import { RowResizeState } from "./states/RowResizeState.js";
-import { EditingState } from "./states/EditingState.js";
+import { HitTest } from "./Resolver/HitTest.js";
 
 
 
@@ -128,36 +118,10 @@ export class InteractionManager {
     }
 
 //.................................................................................................................................
-// 
 
     public goIdle(): void {
         this.getCanvas().style.cursor = "cell";
         this.currentState = new IdleState(this);
-    }
-
-    public startCellSelection(event: PointerEvent): void {
-        this.currentState = new CellSelectionState(this);
-        this.currentState.onPointerDown(event);
-    }
-
-    public startHeaderSelection(event: PointerEvent): void {
-        this.currentState = new HeaderSelectionState(this);
-        this.currentState.onPointerDown(event);
-    }
-
-    public startColumnResize(event: PointerEvent): void {
-        this.currentState = new ColumnResizeState(this);
-        this.currentState.onPointerDown(event);
-    }
-
-    public startRowResize(event: PointerEvent): void {
-        this.currentState = new RowResizeState(this);
-        this.currentState.onPointerDown(event);
-    }
-
-    public startEditing(event: MouseEvent): void {
-        this.currentState = new EditingState(this);
-        this.currentState.onDoubleClick(event);
     }
 
 

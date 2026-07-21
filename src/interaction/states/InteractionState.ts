@@ -5,5 +5,5 @@ export interface InteractionState{
     onPointerMove(event: PointerEvent): void;
     onPointerUp(event: PointerEvent): void;
     onDoubleClick(event: MouseEvent): void;
-    
+    HitTest(event: PointerEvent): boolean;
 }

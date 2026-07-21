@@ -20,7 +20,7 @@ export class HitTest {
     constructor(
         private mouseHandler: MouseHandler,
         private resizeDetector: ResizeDetector
-    ) { }
+    ) {}
 
     public resolve(event: PointerEvent): InteractionResult {
 
@@ -49,6 +49,11 @@ export class HitTest {
                 mouseCell: null
             };
         }
+
+//         private interactionManager: InteractionManager,
+//         private resizeDetector: ResizeDetector,
+//         private mouseHandler: MouseHandler
+
 
         // Resize ?
         const resizeInfo = this.resizeDetector.detectResize(event.offsetX, event.offsetY);

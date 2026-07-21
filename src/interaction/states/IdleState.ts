@@ -1,43 +1,37 @@
 import { InteractionManager } from "../InteractionManager.js";
 import { InteractionType } from "../Resolver/HitTest.js";
+import { CellSelectionState } from "./CellSelectionState.js";
+import { ColumnResizeState } from "./ColumnResizeState.js";
+import { EditingState } from "./EditingState.js";
+import { HeaderSelectionState } from "./HeaderSelectionState.js";
 import { InteractionState } from "./InteractionState.js";
+import { RowResizeState } from "./RowResizeState.js";
 
 export class IdleState implements InteractionState {
 
     constructor(private interactionManager: InteractionManager) { }
 
+    HitTest(event: PointerEvent): boolean {
+        return true;
+    }
+
     onPointerDown(event: PointerEvent): void {
         // console.log("Idle -> pointer down");
+        const states = [
+            ColumnResizeState,
+            RowResizeState,
+            HeaderSelectionState,
+            CellSelectionState
+        ]
         const interaction = this.interactionManager.getHitTest().resolve(event);
-        console.log(interaction.type.toString());
 
-
-        switch (interaction.type) {
-
-            case InteractionType.CELL:
-                this.interactionManager.startCellSelection(event);
-                // console.log("CELL SELECTED");
+        for(const HandlerClass of states){
+            const state = new HandlerClass(this.interactionManager, this.interactionManager.getResizeDetector(), this.interactionManager.getMouseHandler());
+            if(state.HitTest(event)){
+                this.interactionManager.setState(state);
+                this.interactionManager.onPointerDown(event);
                 break;
-
-            case InteractionType.ROW_HEADER:
-                this.interactionManager.startHeaderSelection(event);
-                // console.log("ROW HEADER SELECTED");
-                break;
-
-            case InteractionType.COLUMN_HEADER:
-                this.interactionManager.startHeaderSelection(event);
-                // console.log("COLUMN HEADER SELECTED");
-                break;
-
-            case InteractionType.COLUMN_RESIZE:
-                this.interactionManager.startColumnResize(event);
-                // console.log("COL RESIZE SELECTED");
-                break;
-
-            case InteractionType.ROW_RESIZE:
-                this.interactionManager.startRowResize(event);
-                // console.log("ROW RESIZE SELECTED");
-                break;
+            }
         }
 
     }
@@ -51,8 +45,8 @@ export class IdleState implements InteractionState {
     }
     onDoubleClick(event: MouseEvent): void {
         // console.log("Idle -> DBL click");
-        this.interactionManager.startEditing(event);
-
+        this.interactionManager.setState(new EditingState(this.interactionManager, this.interactionManager.getResizeDetector(), this.interactionManager.getMouseHandler()));
+        this.interactionManager.onDoubleClick(event);
     }
 
 }

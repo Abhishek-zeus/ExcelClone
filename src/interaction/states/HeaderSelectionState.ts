@@ -1,4 +1,5 @@
-import { MouseCell } from "../../events/MouseHandler.js";
+import { MouseCell, MouseHandler } from "../../events/MouseHandler.js";
+import { ResizeDetector } from "../../events/ResizeDetector.js";
 import { COLUMN_HEADER_HEIGHT, ROW_HEADER_WIDTH } from "../../utils/Constants.js";
 import { InteractionManager } from "../InteractionManager.js";
 import { InteractionState } from "./InteractionState.js";
@@ -9,8 +10,18 @@ export class HeaderSelectionState implements InteractionState{
     private needsRender: boolean = false;
 
     constructor(
-        private interactionManager: InteractionManager
+        private interactionManager: InteractionManager,
+        private resizeDetector: ResizeDetector,
+        private mouseHandler: MouseHandler
     ){}
+
+    HitTest(event: PointerEvent): boolean {
+        if (event.offsetX < ROW_HEADER_WIDTH || event.offsetY < COLUMN_HEADER_HEIGHT) {
+            console.log("HEADER");
+            return true;
+        }
+        return false;
+    }
 
     onPointerDown(event: PointerEvent): void {
         

@@ -1,20 +1,33 @@
-import { MouseCell } from "../../events/MouseHandler.js";
+import { MouseCell, MouseHandler } from "../../events/MouseHandler.js";
+import { ResizeDetector } from "../../events/ResizeDetector.js";
 import { ResizeState } from "../../models/ResizeState.js";
 import { InteractionManager } from "../InteractionManager.js";
 import { IdleState } from "./IdleState.js";
 import { InteractionState } from "./InteractionState.js";
 
-export class CellSelectionState implements InteractionState{
+export class CellSelectionState implements InteractionState {
 
-    private selectionStart : MouseCell | null = null;
+    private selectionStart: MouseCell | null = null;
 
     constructor(
-        private interactionManager: InteractionManager
-    ){}
+        private interactionManager: InteractionManager,
+        private resizeDetector: ResizeDetector,
+        private mouseHandler: MouseHandler
+    ) { }
+
+    HitTest(event: PointerEvent): boolean {
+        const mouseCell = this.mouseHandler.getCellFromMouse(event.offsetX, event.offsetY);
+        const resizeInfo = this.resizeDetector.detectResize(event.offsetX, event.offsetY);
+
+        if(resizeInfo.type === null && mouseCell){
+            return true;
+        }
+        return false;
+    }
 
     onPointerDown(event: PointerEvent): void {
         const cell = this.interactionManager.getMouseHandler().getCellFromMouse(event.offsetX, event.offsetY);
-        if(cell){
+        if (cell) {
             this.selectionStart = cell;
             this.interactionManager.getSelectionManager().selectCell(cell.row, cell.column);    //Select Cell
             this.interactionManager.getRenderScheduler().queueRender(true); //Render
@@ -38,7 +51,7 @@ export class CellSelectionState implements InteractionState{
     }
 
     onDoubleClick(event: MouseEvent): void {
-        throw new Error("Method not implemented.");
+        //nothing
     }
 
 }

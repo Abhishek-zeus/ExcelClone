@@ -1,5 +1,6 @@
 import { ResizeColumnCommand } from "../../commands/ResizeColumnCommand.js";
-import { MouseCell } from "../../events/MouseHandler.js";
+import { MouseCell, MouseHandler } from "../../events/MouseHandler.js";
+import { ResizeDetector } from "../../events/ResizeDetector.js";
 import { ResizeState } from "../../models/ResizeState.js";
 import { MIN_COLUMN_WIDTH } from "../../utils/Constants.js";
 import { InteractionManager } from "../InteractionManager.js";
@@ -11,8 +12,18 @@ export class ColumnResizeState implements InteractionState {
 
 
     constructor(
-        private interactionManager: InteractionManager
+        private interactionManager: InteractionManager,
+        private resizeDetector: ResizeDetector,
+        private mouseHandler: MouseHandler
     ) { }
+
+    HitTest(event: PointerEvent): boolean {
+        const resizeInfo = this.resizeDetector.detectResize(event.offsetX, event.offsetY);
+        if (resizeInfo.type === "COLUMN") {
+            return true;
+        }
+        return false;
+    }
 
     onPointerDown(event: PointerEvent): void {
         const resizeInfo = this.interactionManager.getResizeDetector().detectResize(event.offsetX, event.offsetY);

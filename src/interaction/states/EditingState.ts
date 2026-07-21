@@ -1,5 +1,6 @@
 import { EditCellCommand } from "../../commands/EditCellCommand.js";
-import { MouseCell } from "../../events/MouseHandler.js";
+import { MouseCell, MouseHandler } from "../../events/MouseHandler.js";
+import { ResizeDetector } from "../../events/ResizeDetector.js";
 import { COLUMN_HEADER_HEIGHT, ROW_HEADER_WIDTH } from "../../utils/Constants.js";
 import { InteractionManager } from "../InteractionManager.js";
 import { InteractionState } from "./InteractionState.js";
@@ -9,8 +10,15 @@ export class EditingState implements InteractionState{
     private cell : MouseCell | null = null;
 
     constructor(
-        private interactionManager: InteractionManager
+        private interactionManager: InteractionManager,
+        private resizeDetector: ResizeDetector,
+        private mouseHandler: MouseHandler
     ){}
+
+    HitTest(event: PointerEvent): boolean {
+        return false;
+    }
+
     onPointerDown(event: PointerEvent): void {
         //nothing
     }
