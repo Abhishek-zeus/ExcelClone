@@ -43,7 +43,7 @@ graph TD
     StatisticsCalculator["StatisticsCalculator"]
     StatusBar["StatusBar"]
     CommandInvoker["CommandInvoker"]
-    KeyboardController["KeyboardController]
+    KeyboardController["KeyboardController"]
     NavigationController["NavigationController"]
  
     Grid --> Viewport
@@ -380,7 +380,7 @@ class CanvasRenderer{
 -drawSelection()
 }
 
-class InteractionStates (Generic){
+class InteractionStates_Generic{
 +onPointerDown()
 +onPointerMove()
 +onPointerUp()
