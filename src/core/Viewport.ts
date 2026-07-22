@@ -93,16 +93,16 @@ export class Viewport {
 
         const visibleHeight = this.getVisibleHeight();
 
-        if(row <= this.getFirstVisibleRow()){
-            this.scrollTop = this.rowColumnManager.getRowY(row);
+        if(row < this.getFirstVisibleRow()){
+            this.scrollTop = this.rowColumnManager.getRowY(row)+this.rowColumnManager.getRowHeight(row);
         }
-        else if(row >= this.getLastVisibleRow()){
+        else if(row > this.getLastVisibleRow()){
             this.scrollTop = this.rowColumnManager.getRowY(row) - visibleHeight + this.rowColumnManager.getRowHeight(row) ;
         }
         if(column <= this.getFirstVisibleColumn()){
             this.scrollLeft = this.rowColumnManager.getColumnX(column);
         }
-        else if(column >= this.getLastVisibleColumn()){
+        else if(column > this.getLastVisibleColumn()){
             this.scrollLeft = this.rowColumnManager.getColumnX(column) - this.canvasWidth + this.rowColumnManager.getColumnWidth(column);
         }
     }
