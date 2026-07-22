@@ -18,7 +18,7 @@ import { InteractionManager } from "../interaction/InteractionManager.js"
 import { RenderScheduler } from "../renderer/RenderScheduler.js";
 import { KeyboardController } from "../keyboard/KeyboardContoller.js";
 import { StatisticsController } from "../selection/StatisticsController.js";
-import { HitTest } from "../interaction/Resolver/HitTest.js";
+
 import { NavigationController } from "../keyboard/NavigationController.js";
 
 //  Grid is the "manager"/orchestrator of the whole application.
@@ -46,7 +46,6 @@ export class Grid {
 
     private isSelecting: boolean = false;
     private selectionStart: MouseCell | null = null;
-    private hitTest: HitTest;
     private interactionManager: InteractionManager;
     private renderScheduler: RenderScheduler;
     private statisticsController: StatisticsController;
@@ -120,7 +119,6 @@ export class Grid {
             this.navigationController
         );
 
-        this.hitTest = new HitTest(this.mouseHandler,this.resizeDetector);
 
         this.interactionManager = new InteractionManager(
             this.canvas, 
@@ -134,7 +132,6 @@ export class Grid {
             this.editorManager, 
             this.renderer, 
             this.renderScheduler,
-            this.hitTest
         );
 
 

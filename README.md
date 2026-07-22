@@ -43,6 +43,8 @@ graph TD
     StatisticsCalculator["StatisticsCalculator"]
     StatusBar["StatusBar"]
     CommandInvoker["CommandInvoker"]
+    KeyboardController["KeyboardController]
+    NavigationController["NavigationController"]
  
     Grid --> Viewport
     Grid --> MouseHandler
@@ -55,8 +57,10 @@ graph TD
     Grid --> StatisticsCalculator
     Grid --> StatusBar
     Grid --> CommandInvoker
+    Grid --> KeyboardController
  
     Renderer --> HeaderRenderer
+    KeyboardController --> NavigationController
 ```
 
 ---
@@ -367,12 +371,30 @@ class Viewport{
 +getLastVisibleRow()
 +getFirstVisibleColumn()
 +getLastVisibleColumn()
+
 }
  
 class CanvasRenderer{
 +render()
 -drawGrid()
 -drawSelection()
+}
+
+class InteractionStates (Generic){
++onPointerDown()
++onPointerMove()
++onPointerUp()
++onDoubleClick()
++HitTest()
+}
+
+class InteractionManager{
++setState()
++onPointerDown()
++onPointerMove()
++onPointerUp()
++onDoubleClick()
++goIdle()
 }
  
 class HeaderRenderer{
@@ -407,6 +429,17 @@ class RowColumnManager{
 +setRowHeight()
 +setColumnWidth()
 }
+
+class KeyboardController{
++onKeyDown()
+}
+
+class NavigationController{
++moveRight()
++moveLeft()
++moveUp()
++moveDown()
+}
  
 Grid --> CanvasRenderer
 Grid --> Viewport
@@ -415,7 +448,11 @@ Grid --> DataModel
 Grid --> SelectionManager
 Grid --> EditorManager
 Grid --> RowColumnManager
- 
+Grid --> InteractionManager
+Grid --> KeyboardController
+
+KeyboardController --> NavigationController
+InteractionManager --> InteractionStates 
 CanvasRenderer --> HeaderRenderer
 CanvasRenderer --> DataModel
 CanvasRenderer --> SelectionManager

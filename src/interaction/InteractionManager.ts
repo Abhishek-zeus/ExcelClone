@@ -11,7 +11,7 @@ import { InteractionState } from "./states/InteractionState.js";
 import { DataModel } from "../data/DataModel.js";
 import { EditorManager } from "../editor/EditorManager.js";
 import { IdleState } from "./states/IdleState.js";
-import { HitTest } from "./Resolver/HitTest.js";
+
 
 
 
@@ -32,7 +32,6 @@ export class InteractionManager {
         private editorManager: EditorManager,
         private renderer: CanvasRenderer,
         private renderScheduler: RenderScheduler,
-        private hitTest: HitTest
     ) {
         this.currentState = new IdleState(this);
     }
@@ -111,10 +110,6 @@ export class InteractionManager {
 
     public getEditorManager(): EditorManager {
         return this.editorManager;
-    }
-
-    public getHitTest(): HitTest{
-        return this.hitTest;
     }
 
 //.................................................................................................................................
