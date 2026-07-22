@@ -4,7 +4,7 @@ import { EditorManager } from "../editor/EditorManager.js";
 import { Viewport } from "./Viewport.js";
 import { MouseCell, MouseHandler } from "../events/MouseHandler.js";
 import { SelectionManager } from "../selection/SelectionManager.js";
-import { CELL_HEIGHT, CELL_WIDTH, COLUMN_HEADER_HEIGHT, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT, ROW_HEADER_WIDTH, TOTAL_COLUMNS, TOTAL_ROWS } from "../utils/Constants.js";
+import { CELL_HEIGHT, CELL_WIDTH, COLUMN_HEADER_HEIGHT, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT, ROW_HEADER_WIDTH, STATUS_BAR_HEIGHT, TOTAL_COLUMNS, TOTAL_ROWS } from "../utils/Constants.js";
 import { ResizeDetector } from "../events/ResizeDetector.js";
 import { RowColumnManager } from "./RowColumnManager.js";
 import { ResizeState } from "../models/ResizeState.js";
@@ -87,8 +87,7 @@ export class Grid {
         this.scrollContent.style.position = 'absolute';
         this.scrollContent.style.top = '0';
         this.scrollContent.style.left = '0';
-        this.scrollContent.style.width = `${TOTAL_COLUMNS * CELL_WIDTH}px`;
-        this.scrollContent.style.height = `${TOTAL_ROWS * CELL_HEIGHT}px`;
+
         this.scrollContent.style.pointerEvents = 'none'; // Passes clicks directly to canvas
 
         this.scrollContainer.appendChild(this.scrollContent);
@@ -205,6 +204,8 @@ export class Grid {
         const startColumn = this.viewport.getFirstVisibleColumn();
         const endColumn = this.viewport.getLastVisibleColumn();
 
+        this.scrollContent.style.width = `${ this.rowColumnManager.getColumnX(TOTAL_COLUMNS+1)}px`;
+        this.scrollContent.style.height = `${this.rowColumnManager.getRowY(TOTAL_ROWS+1)}px`;
         this.renderer.render(
             startRow,
             endRow,

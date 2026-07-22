@@ -1,5 +1,4 @@
 import { InteractionManager } from "../InteractionManager.js";
-import { InteractionType } from "../Resolver/HitTest.js";
 import { CellSelectionState } from "./CellSelectionState.js";
 import { ColumnResizeState } from "./ColumnResizeState.js";
 import { EditingState } from "./EditingState.js";
@@ -23,7 +22,7 @@ export class IdleState implements InteractionState {
             HeaderSelectionState,
             CellSelectionState
         ]
-        const interaction = this.interactionManager.getHitTest().resolve(event);
+        
 
         for(const HandlerClass of states){
             const state = new HandlerClass(this.interactionManager, this.interactionManager.getResizeDetector(), this.interactionManager.getMouseHandler());

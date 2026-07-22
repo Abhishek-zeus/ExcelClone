@@ -54,9 +54,9 @@ export class CanvasRenderer {
         this.clearCanvas();
         this.drawGrid(startRow, endRow, startColumn, endColumn, scrollTop, scrollLeft);
         this.drawCellContents(startRow, endRow, startColumn, endColumn, scrollTop, scrollLeft);
-        this.drawSelection();
         this.headerRenderer.drawColumnHeaders(startColumn, endColumn, scrollLeft);
         this.headerRenderer.drawRowHeaders(startRow, endRow, scrollTop);
+        this.drawSelection();
     }
 
     private clearCanvas(): void {
