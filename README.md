@@ -452,7 +452,7 @@ Grid --> InteractionManager
 Grid --> KeyboardController
 
 KeyboardController --> NavigationController
-InteractionManager --> InteractionStates 
+InteractionManager --> InteractionStates_Generic
 CanvasRenderer --> HeaderRenderer
 CanvasRenderer --> DataModel
 CanvasRenderer --> SelectionManager
