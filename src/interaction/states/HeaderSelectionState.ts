@@ -17,7 +17,6 @@ export class HeaderSelectionState implements InteractionState{
 
     HitTest(event: PointerEvent): boolean {
         if (event.offsetX < ROW_HEADER_WIDTH || event.offsetY < COLUMN_HEADER_HEIGHT) {
-            console.log("HEADER");
             return true;
         }
         return false;

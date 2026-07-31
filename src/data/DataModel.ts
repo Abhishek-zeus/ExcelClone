@@ -71,7 +71,6 @@ export class DataModel {
         while (this.columnKeys.length < totalColumns) {
             this.columnKeys.push(`Col_${this.columnKeys.length}`);
         }
-        console.log("Columns are", this.columnKeys[6], this.columnKeys[7], this.columnKeys[8], this.columnKeys[9]);
     }
 
     /**
@@ -93,7 +92,11 @@ export class DataModel {
         column: number,
         value: any
     ): void {
+        const rowData = this.records[row];
+        if (!rowData) return;
+
         const key = this.columnKeys[column];
+        if (!key) return;
         this.records[row][key] = value;
     }
 

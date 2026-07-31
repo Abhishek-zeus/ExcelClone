@@ -10,7 +10,6 @@ export class NavigationController{
     ){} 
 
     moveRight():void{
-        console.log("ArrowRight");
         const row: number = this.selectionManager.selectedRow();
         const col: number = this.selectionManager.selectedColumn();
         const newCol: number = Math.max(0, Math.min(TOTAL_COLUMNS-1,col + 1));
@@ -18,7 +17,6 @@ export class NavigationController{
         this.viewPort.ensureCellVisible(row, newCol+1);
     }
     moveLeft():void{
-        console.log("ArrowLeft");
         const row: number = this.selectionManager.selectedRow();
         const col: number = this.selectionManager.selectedColumn();
         const newCol: number = Math.max(0, Math.min(TOTAL_COLUMNS-1,col - 1));
